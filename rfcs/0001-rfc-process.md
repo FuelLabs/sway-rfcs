@@ -29,7 +29,7 @@ Many changes, including bug fixes and documentation improvements can be
 implemented and reviewed via the normal GitHub pull request workflow.
 
 Some changes though are "substantial", and we ask that these be put
-through a bit of a design process and produce a consensus among the Sway  
+through a bit of a design process and produce a consensus among the Sway
 community and the [core team].
 
 ## When you need to follow this process
