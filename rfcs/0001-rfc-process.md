@@ -86,7 +86,7 @@ Whomever merges the RFC should do the following:
   has multiple pull requests associated with it, choose one PR number,
   preferably the minimal one.)
 * Add the file in the `rfcs/` directory.
-* Create a corresponding issue on [Sway repo](https://github.com/FuelLabs/sway)
+* Create a corresponding issue on [Sway repo](https://github.com/FuelLabs/sway).
 * Fill in the remaining metadata in the RFC header, including links for
   the original pull request(s) and the newly created Sway issue.
 * Add an entry in the [Active RFC List] of the root `README.md`.
