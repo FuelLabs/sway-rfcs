@@ -66,7 +66,7 @@ RFC merged into the RFC repo as a markdown file. At that point the RFC
 is 'active' and may be implemented with the goal of eventual inclusion
 into Sway.
 
-* Fork the RFC repo https://github.com/FuelLabs/sway-rfcs (or make a branch if you are core-team)
+* Fork the RFC repo https://github.com/FuelLabs/sway-rfcs (or make a branch if you are core-team).
 * Copy `0000-template.md` to `rfcs/0000-my-feature.md` (where
 'my-feature' is descriptive. don't assign an RFC number yet).
 * Fill in the RFC
