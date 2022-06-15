@@ -69,7 +69,7 @@ into Sway.
 * Fork the RFC repo https://github.com/FuelLabs/sway-rfcs (or make a branch if you are core-team).
 * Copy `0000-template.md` to `rfcs/0000-my-feature.md` (where
 'my-feature' is descriptive. don't assign an RFC number yet).
-* Fill in the RFC
+* Fill in the RFC.
 * Submit a pull request. The pull request is the time to get review of
 the design from the larger community.
 * Build consensus and integrate feedback. RFCs that have broad support
