@@ -1,11 +1,11 @@
 - Start Date: 2022-06-15
 - RFC PR: [FuelLabs/sway#1](https://github.com/FuelLabs/sway-rfcs/pull/1)
 
-_This RFC process is inspired by, and mostly copied from, Rust's RFC process. 
+This RFC process is inspired by, and mostly copied from, Rust's RFC process. 
 See [here](https://github.com/rust-lang/rfcs/blob/master/text/0002-rfc-process.md)
 for Rust's version of this.
 
-Rust's RFC process has proven efficiency that we'd like to emulate._
+Rust's RFC process has proven efficiency that we'd like to emulate.
 
 # Summary
 
