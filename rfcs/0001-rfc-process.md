@@ -52,7 +52,7 @@ does not change meaning".
    - Additions that strictly improve objective, numerical quality
 criteria (warning removal, speedup, better platform coverage, more
 parallelism, trap more errors, etc.)
-   - Additions only likely to be _noticed by_ other developers-of-sway,
+   - Additions only likely to be _noticed by_ other developers-of-Sway,
 invisible to users-of-sway.
 
 If you submit a pull request to implement a new feature without going
