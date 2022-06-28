@@ -56,12 +56,14 @@
  In the space of possible docstring designs, this is the most consistent with Rust and also very ergonomic. Additionally, a good chunk of Sway code has already been written with the assumption that this docstring format will be accepted. Therefore, there are already many docstrings written in this way.
 
  Other designs could include just the attribute without the three-slash-comment-based syntactic sugar, ML-family-style docstrings `{- docstring -}`, or multiline-style:
+ 
  ```
 /**
   * Multiline style docstring.
   *
   */
  ```
+
  The proposed style is, however, most consistent with our design principles. If we were to leave docstrings unimplemented, we would be missing a core part of the Sway product and would
  have no canonical method of in-code documentation.
 
