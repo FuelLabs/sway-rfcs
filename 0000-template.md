@@ -1,7 +1,7 @@
 - Feature Name: (fill me in with a unique ident, `my_awesome_feature`)
 - Start Date: (fill me in with today's date, YYYY-MM-DD)
-- RFC PR: [FuelLabs/sway-rfcs#0000](https://github.com/FuelLabs/sway-rfcs/pull/0000)
-- Sway Issue: [FueLabs/sway#0000](https://github.com/FuelLabs/Sway/issues/0000)
+- RFC PR: [FuelLabs/sway-rfcs#0000](https://github.com/FuelLabs/sway-rfcs/pull/001)
+- Sway Issue: [FueLabs/sway#0000](https://github.com/FuelLabs/sway/issues/001)
 
 # Summary
 [summary]: #summary
