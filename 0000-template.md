@@ -23,6 +23,7 @@ Explain the proposal as if it was already included in the language and you were 
 - Explaining how Sway programmers should *think* about the feature, and how it should impact the way they use Sway. It should explain the impact as concretely as possible.
 - If applicable, provide sample error messages, deprecation warnings, or migration guidance.
 - If applicable, describe the differences between teaching this to existing Sway programmers and new Sway programmers.
+- If this change is breaking, discuss how existing codebases can adapt to this change.
 
 For implementation-oriented RFCs (e.g. for compiler internals), this section should focus on how compiler contributors should think about the change, and give examples of its concrete impact. For policy RFCs, this section should provide an example-driven introduction to the policy, and explain its impact in concrete terms.
 
@@ -34,6 +35,7 @@ This is the technical portion of the RFC. Explain the design in sufficient detai
 - Its interaction with other features is clear.
 - It is reasonably clear how the feature would be implemented.
 - Corner cases are dissected by example.
+- If this change is breaking, mention the impact of it here and how the breaking change should be managed.
 
 The section should return to the examples given in the previous section, and explain more fully how the detailed proposal makes those examples work.
 
