@@ -4,6 +4,7 @@
  - Sway Issue: [FueLabs/sway#149](https://github.com/FuelLabs/Sway/issues/149)
 
  # Summary
+ 
  [summary]: #summary
 
  Sway will convert Rust-style docstrings (`///`-style comments) into a `#[doc("documentation string")]` annotation. This annotation can then be consumed by tooling and plugins to produce
