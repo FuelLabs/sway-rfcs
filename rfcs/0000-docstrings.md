@@ -63,7 +63,7 @@ In the space of possible docstring designs, this is the most consistent with Rus
 Other designs could include just the attribute without the three-slash-comment-based syntactic sugar, ML-family-style docstrings `{- docstring -}`, or multiline-style:
 
 ```
-**
+/**
  * Multiline style docstring.
  *
  */
