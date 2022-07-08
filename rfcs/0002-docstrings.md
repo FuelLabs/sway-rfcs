@@ -1,6 +1,6 @@
 - Feature Name: docstrings
 - Start Date: 2022-06-27
-- RFC PR: [FuelLabs/sway-rfcs#0000](https://github.com/FuelLabs/sway-rfcs/pull/2)
+- RFC PR: [FuelLabs/sway-rfcs#0002](https://github.com/FuelLabs/sway-rfcs/pull/2)
 - Sway Issue: [FueLabs/sway#149](https://github.com/FuelLabs/Sway/issues/149)
 
 # Summary
