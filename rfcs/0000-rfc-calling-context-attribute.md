@@ -7,7 +7,7 @@
 
 [summary]: #summary
 
-Sway will support an attribute (i.e. `#[context(internal_only)]`) to annotate the supported calling contexts for particular functions.
+Sway will support an attribute (i.e. `#[calling_context(contract_only)]`) to annotate the supported calling contexts for particular functions.
 
 This annotation can then be used by the compiler to check and restrict the calling of these functions to a compatible calling context.
 
@@ -15,9 +15,9 @@ This annotation can then be used by the compiler to check and restrict the calli
 
 [motivation]: #motivation
 
-The main goal is to be able to get compile-time safety when working with functions that should only be called from an internal (contract) context.
+The main goal is to be able to get compile-time safety when working with functions that should only be called from a contract context.
 
-A real-world example of this is the [msg_amount() stdlib function](https://github.com/FuelLabs/sway-lib-std/blob/6a8f5bf588df5d0679fb834f05c900f2e54de426/src/context.sw#L33-L38) which only returns a proper value when used in an internal context. In an external context is returns a well-defined but not semantically representative value, specifically 0, as explained by @adlerjohn in [FueLabs/sway#963](https://github.com/FuelLabs/sway/issues/963).
+A real-world example of this is the [msg_amount() stdlib function](https://github.com/FuelLabs/sway-lib-std/blob/6a8f5bf588df5d0679fb834f05c900f2e54de426/src/context.sw#L33-L38) which only returns a proper value when used in a contract context. In an external context is returns a well-defined but not semantically representative value, specifically 0, as explained by @adlerjohn in [FueLabs/sway#963](https://github.com/FuelLabs/sway/issues/963).
 
 # Guide-level explanation
 
@@ -30,7 +30,7 @@ Take the following example:
 ```rust
 contract;
 
-#[context(internal_only)]
+#[calling_context(contract_only)]
 fn bar() {}
 
 abi TestContract {
@@ -44,12 +44,12 @@ impl TestContract for Contract {
 }
 ```
 
-The above code example shows a _calling context attribute_ annotating a function item, `fn bar()`, restricting it to be only called in `internal` contexts, or contract contexts.
+The above code example shows a _calling context attribute_ annotating a function item, `fn bar()`, restricting it to be only called in contract contexts.
 
 Generally, Sway programmers should use this to annotate functions that are only applicable when being called from a contract, so the compiler can provide an error when they are misused.
 
 This annotation is transitive, meaning it needs to be also specified through all functions
-that call `internal_only` functions.
+that call `contract_only` functions.
 
 
 # Reference-level explanation
@@ -66,12 +66,12 @@ The feature is pretty self-contained and doesn't affect any pre-existing code.
 
 The only expected potential breaking changes are once the standard library code will take advantage of this, then user code will need to be annotated further up the call chain.
 
-One thing to note is that is that functions that call an `internal_only` function needs themselves to be annotated as internal.
+One thing to note is that is that functions that call an `contract_only` function needs themselves to be annotated as contract-only.
 
 So for instance imagine the following library code:
 
 ```rust
-#[context(internal_only)]
+#[calling_context(contract_only)]
 fn foo() {}
 
 fn bar() {
@@ -79,9 +79,9 @@ fn bar() {
 }
 ```
 
-This will give a compile error, forcing the user to annotate `bar` with `#[context(internal_only)]` as well.
+This will give a compile error, forcing the user to annotate `bar` with `#[calling_context(contract_only)]` as well.
 
-The only exception to this are contract-level functions which are themselves already internal.
+The only exception to this are contract-level functions which are themselves already satisfy the contract-only contraints by default.
 
 # Drawbacks
 
@@ -95,7 +95,7 @@ But the extra safety guarantees provided by the feature should make up for it.
 
 [rationale-and-alternatives]: #rationale-and-alternatives
 
-We could go with an `internal_only` keyword I guess, but re-using attributes seems like a better approach since we are already using the same scheme for storage access.
+We could go with an `contract_only` keyword I guess, but re-using attributes seems like a better approach since we are already using the same scheme for storage access.
 
 # Prior art
 
@@ -107,13 +107,7 @@ The obvious instance is Sway's very own storage attributes, which work used in a
 
 [unresolved-questions]: #unresolved-questions
 
-1. Is the current naming (calling context attribute) for this feature OK or do you have a more semantically-correct suggestion?
-
-2. Is `internal_only` the only calling context we want to support or can you think of some other we may want to support in the future?
-
-3. Do we go with `internal_only` maybe or maybe use something else like `contract_only`?
-
-4. Do we go with the current `context` attribute name, or should we name it `calling_context(internal_only)`, maybe even `restrict_context(internal)`, or something else?
+1. Is `contract_only` the only calling context we want to support or can you think of some other we may want to support in the future?
 
 # Future possibilities
 
