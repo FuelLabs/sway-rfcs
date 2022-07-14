@@ -1,34 +1,75 @@
 - Feature Name: Declaration Engine
 - Start Date: 2022-07-13
-- RFC PR: [FuelLabs/sway-rfcs#0000](https://github.com/FuelLabs/sway-rfcs/pull/001)
-- Sway Issue: [FueLabs/sway#0000](https://github.com/FuelLabs/sway/issues/001)
+- RFC PR: [FuelLabs/sway-rfcs#0011](https://github.com/FuelLabs/sway-rfcs/pull/11)
+- Sway Issue: [FueLabs/sway#1821](https://github.com/FuelLabs/sway/issues/1821), [FueLabs/sway#1692](https://github.com/FuelLabs/sway/issues/1692)
 
 # Summary
 
 [summary]: #summary
 
-One paragraph explanation of the feature.
+With it's current design, the Sway compiler faces challenges regarding how declarations interact with the type system and code generation. These include:
+1. function bodies must be inlined during type checking ([FueLabs/sway#1557](https://github.com/FuelLabs/sway/issues/1557))
+2. monomorphization of declarations is unnecessarily duplicated ([FueLabs/sway#862](https://github.com/FuelLabs/sway/issues/862))
+3. it is currently impossible to implement `where` clauses without extensive special casing/dummy definitions ([FueLabs/sway#970](https://github.com/FuelLabs/sway/issues/970))
+
+This RFC proposes a solution to this---the "declaration engine". The declaration engine is a redesign of how the compiler thinks about type checking of declarations, and seeks to solve the problems described above. At a high level, the declaration engine stores intermediate representations of potentially type-checked declarations and allows the compiler to refer to those intermediate representations during type checking.
 
 # Motivation
 
 [motivation]: #motivation
 
-Why are we doing this? What use cases does it support? What is the expected outcome?
+With the changes introduced by this RFC, the compiler will be able to think about declarations more abstractly and will not be required to inline AST nodes during type checking. In addition to solving the issues above, I believe that this change will create a mechanism in the compiler which will allow us to implement additional optimizations in the future.
 
 # Guide-level explanation
 
 [guide-level-explanation]: #guide-level-explanation
 
-Explain the proposal as if it was already included in the language and you were teaching it to another Sway programmer. That generally means:
+Because this is an internal compiler RFC, the affected group is the Sway compiler devs.
 
-- Introducing new named concepts.
-- Explaining the feature largely in terms of examples.
-- Explaining how Sway programmers should *think* about the feature, and how it should impact the way they use Sway. It should explain the impact as concretely as possible.
-- If applicable, provide sample error messages, deprecation warnings, or migration guidance.
-- If applicable, describe the differences between teaching this to existing Sway programmers and new Sway programmers.
-- If this change is breaking, discuss how existing codebases can adapt to this change.
+Specifically in the context of Sway terminology, the phrase "type checking" is often used to refer to the Sway compiler step in which untyped AST nodes are transformed to typed AST nodes. But really, the compier step we refer to "type checking" is actually doing type inference. This distinction is important because it allows us to understand the role of the declaration engine.
 
-For implementation-oriented RFCs (e.g. for compiler internals), this section should focus on how compiler contributors should think about the change, and give examples of its concrete impact. For policy RFCs, this section should provide an example-driven introduction to the policy, and explain its impact in concrete terms.
+## Toy Example
+
+(this is an elaborate explanation that most will already be profficient in---but it does build to a good point!)
+
+For the purposes of illustration, imagine a new toy language that is statically and strongly typed, but allows for optional type annotations (like Sway and Rust). The toy compiler that we could write for this toy language would need to evaluate the types of objects at compile time to either correctly compile a program or fail to compile a program (like the Sway compiler and the Rust compiler). The toy compiler would have three broad-strokes steps (1) parsing, (2) type checking, and (3) code generation. Because the toy language allows for optional type annotations, after the parsing step, the toy compiler would know the types for either none, some, or all, of the objects in the program. To compensate for this, the toy compiler would perform type inference, where the types of untyped objects would be inferred from the types of typed objects. 
+
+At it's most abstract, we can think of type inference as a constraint solving problem, where constraints are rules dictating how types relate to one another. The toy compiler cares very little about the _actual type_ of types (i.e. us as humans know that a `bool` means either `true` or `false`, or `on` or `off`, or "nod head" or "shake head", etc, but the compiler doesn't know that), and instead cares more about how the collection of types within the program relate to one other.
+
+For example, imagine that our toy language includes variables and variable assignments. If we have a variable `x` of type `bool`, and then declare a different variable `y` and assign it to `x`, we can infer that `y` is of type `bool`.
+
+But, this property is not exclusive to just `bool`s---variable assignment does not "work differently" for `bool`s than it does for `u64`s. Thus, we can make this example more abstract. If `x` is of type `T`, and we assign `y` to `x`, we can infer that `y` is of type `T`. Importantly, `T` could be any concrete type (`bool`, `u64`, etc), and that would not affect the type inference that we just made---no matter what `T` is, we still know that `y` is of type `T` because `x` is of type `T`.
+
+But we take this one step furthur... when performing type inference, we don't even really need to know that `y` is type `T`, we simply only need to know that `y` _has the same type as `x`_. This is a constraint. The toy compiler can perform type inference for `y` by generating the constraint "`y` has the same type as `x`".
+
+Now, imagine that the toy language includes if statements and the toy compiler encounters an if statement that uses `x` as the conditional. The toy compiler has this list of constraints:
+
+1. `x` has type `T`
+2. `y` has the same type as `x`
+
+But when `x` is used as the conditional in an if statement, we can add an additional constraint:
+
+3. the type of `x` is `bool`
+
+With these three constraints, the toy compiler is able to perform constraint solving (unifying the constraints with unification) to determine that both `x` and `y` are of type `bool`.
+
+Now, imagine that the toy language includes addition expressions and the toy compiler encounters an addition expression `y + 1u64`. This would generate the constraint:
+
+4. `y` has type `u64`
+
+With these four constraints, the toy compiler is unable to perform unification, as the constraints are unable to be unified and generate a type error.
+
+We can see that the toy compiler would be able to perform type inference for a whole program by generating a list of constraints and then unifying these constraints.
+
+(Type inference, constraint solving, and unification are defined here: https://papl.cs.brown.edu/2014/Type_Inference.html)
+
+## Declaration Engine
+
+The declaration engine takes the concept of constraints and unification and applies it to declarations.
+
+For example, when type checking a function application, the compiler does not need to care about the contents of the body of the function, instead it is sufficient to create a constraint referring to "the return type of the function".
+
+For example, given a typed function declaration `add`, we add this declaration to the declaration engine. Then when type checking a function application of `add`, instead of inlining the function body, we create constraints referring to "the body of `add`" and "the return type of `add`". When type checking a _function application_
 
 # Reference-level explanation
 
@@ -47,7 +88,7 @@ The section should return to the examples given in the previous section, and exp
 
 [drawbacks]: #drawbacks
 
-Why should we *not* do this?
+I believe that the only drawbacks are developer time and implementation complexity.
 
 # Rationale and alternatives
 
