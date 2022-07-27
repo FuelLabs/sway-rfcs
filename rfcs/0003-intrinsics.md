@@ -74,11 +74,17 @@ To begin with, VM opcodes that are used through assembly wrappers in the core an
 
 A (non-exhaustive) list of intrinsics to support: `std::ops` (arithmetic, logical, comparison), `alloc`, `block::height`, `logging::log` etc.
 
+Because of the possibility of Sway supporting other targets in the future
+(such as EVM), VM specific intrinsics may be declared modularly, so that
+the toolchain can choose the ones to load based on the target.
+
 ## Testing
 For each core/std library function that we provide an intrinsic for, move the library function into the testsuite, and for every (prio) use of the library function in the testsuite, replace it with a call to the intrinsic and an assert that calls the (now in the testsuite) library function and asserts equivalence. For newly supported VM opcodes, add new tests
 
 ## Documentation
-TBD
+Given that Sway programmers are free to use intrinsics, it is essential
+that we document all intrinsics categorically in a book, perhaps
+alongside the standard library.
 
 # Drawbacks
 
