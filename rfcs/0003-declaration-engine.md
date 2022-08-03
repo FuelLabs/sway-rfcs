@@ -75,14 +75,86 @@ For example, given a typed function declaration `add`, we add this declaration t
 
 [reference-level-explanation]: #reference-level-explanation
 
-This is the technical portion of the RFC. Explain the design in sufficient detail that:
+This design will take after the design of the [type engine](https://github.com/FuelLabs/sway/blob/2816c13698a35752136d4843dbfe5e1b95c26e10/sway-core/src/type_engine/engine.rs#L14). During type checking, the compiler will add information about declarations to the declaration engine. Then, in places where that declaration is used, a value representing that declaration can be generated in place of inlining the declaration.
 
-- Its interaction with other features is clear.
-- It is reasonably clear how the feature would be implemented.
-- Corner cases are dissected by example.
-- If this change is breaking, mention the impact of it here and how the breaking change should be managed.
+### Definition
 
-The section should return to the examples given in the previous section, and explain more fully how the detailed proposal makes those examples work.
+During type checking of a declaration, the compiler will add information about that declaration to the declaration engine:
+
+```rust
+struct DeclarationEngine {
+    // function name to typed function declaration
+    // this example code does not consider Path's, but we could use
+    // a BTreeMap with Path's as the key
+    functions: HashMap<String, TypedFunctionDeclaration>,
+
+    // struct name to typed struct declaration
+    // again, this does not consider Path's
+    structs: HashMap<String, TypedStructDeclaration>,
+
+    // enums and traits
+}
+
+impl DeclarationEngine {
+    fn add_function(&mut self, function: TypedFunctionDeclaration) -> DeclarationDefinition {
+        // add to self and return DeclarationDefinition
+    }
+
+    fn add_struct(&mut self, r#struct: TypedStructDeclaration) -> DeclarationDefinition {
+        // add to self and return DeclarationDefinition
+    },
+
+    // enums and traits
+}
+
+enum DeclarationDefinition {
+    // does not consider Path's
+    Function(String),
+
+    // does not consider Path's
+    Struct(String),
+
+    // enums and traits
+}
+```
+
+Then in the typed AST, that declarations could look like (in pseudocode):
+
+```rust
+contract;
+
+/// imports
+
+DeclarationDefinition::Function(<function name>)
+DeclarationDefinition::Struct(<struct name>)
+
+/// storage declaration
+
+DeclarationDefinition::Function("main")
+
+```
+
+Because inlining is still needed for the IR, these instances of `DeclarationDefinition` would be replaced in an additional step at the end of type checking called the [resolution step](https://github.com/FuelLabs/sway/issues/1820).
+
+### Usage
+
+When a declaration is _used_ an internal reference is created that references the existence of a possible declaration in the declaration engine, and that is resolved during the resolution step. Given:
+
+```rust
+fn add(x: u64, y: u64) -> u64 {
+    ..
+}
+```
+
+The `TypedFunctionDeclaration` for `add` is added to the declaration engine. Then given:
+
+```rust
+let foo = add(1, 2);
+```
+
+`foo` will be a `TypedExpression` with a [`TypedExpressionVariant::FunctionApplication`](https://github.com/FuelLabs/sway/blob/dcaee960df9b3466c6897d0a86ea806c9abf7edd/sway-core/src/semantic_analysis/ast_node/expression/typed_expression_variant.rs#L18), where instead of storing the entire `TypedFunctionDeclaration` in the `TypedExpressionVariant::FunctionApplication` variant, there is a reference created `Function("add", vec!(u64, u64))` which is stored [here](https://github.com/FuelLabs/sway/blob/dcaee960df9b3466c6897d0a86ea806c9abf7edd/sway-core/src/semantic_analysis/ast_node/expression/typed_expression_variant.rs#L23). The type of `foo` is some new `TypeInfo::ReturnType("add", vec!(u64, u64))`. Both the reference `Function("add", vec!(u64, u64))` and `TypeInfo::ReturnType("add", vec!(u64, u64))` are resolved during the resolution step.
+
+Importantly, introducing the declartion engine in this way means that during type checking before the resolution step, the references introduced during usages of declarations are assumptions. There is no check happening to ensure that `add` exists when creating `Function("add", vec!(u64, u64))`. The check to see if something exists happens in the resolution step. Once the _collection context_ is introduced, the concept of checking to see if things exist can happen significantly sooner, even before type checking begins at all, if we wanted to do so.
 
 # Drawbacks
 
@@ -94,54 +166,24 @@ I believe that the only drawbacks are developer time and implementation complexi
 
 [rationale-and-alternatives]: #rationale-and-alternatives
 
-- Why is this design the best in the space of possible designs?
-- What other designs have been considered and what is the rationale for not choosing them?
-- What is the impact of not doing this?
+I feel that this design offers the best compromise between current state and future growth. The concept of a "declaration engine" in general is very broad, which is a good thing! The design in this RFC is a good one to get us started, but I imagine that as the language progresses, it's needs and use cases for the declaration engine will expand and change. Introducing the declaration engine now gives us the opportunity to create a mechanism through which some of those changes could be introduced later down the road.
+
+That being said, from a high-level perspective, the alternative design would be something similar to what we are doing now, which is more focused on inlining things.
 
 # Prior art
 
 [prior-art]: #prior-art
 
-Discuss prior art, both the good and the bad, in relation to this proposal.
-A few examples of what this can include are:
-
-- For language, library, cargo, tools, and compiler proposals: Does this feature exist in other programming languages and what experience have their community had?
-- For community proposals: Is this done by some other community and what were their experiences with it?
-- For other teams: What lessons can we learn from what other communities have done here?
-- Papers: Are there any published papers or great posts that discuss this? If you have some relevant papers to refer to, this can serve as a more detailed theoretical background.
-
-This section is intended to encourage you as an author to think about the lessons from other languages, provide readers of your RFC with a fuller picture.
-If there is no prior art, that is fine - your ideas are interesting to us whether they are brand new or if it is an adaptation from other languages.
-
-Note that while precedent set by other languages is some motivation, it does not on its own motivate an RFC.
-Please also take into consideration that rust sometimes intentionally diverges from common language features.
+Well, I'm actually not sure. Off the top of my head, at a high-level there are languages that do not inline functions and instead use function tables, for instance. In those languages, I'm really not sure if this is done via a "declaration engine" or not. This RFC will not allow us to avoid inlining functions (we are still doing it in the IR), but it is a first step.
 
 # Unresolved questions
 
 [unresolved-questions]: #unresolved-questions
 
-- What parts of the design do you expect to resolve through the RFC process before this gets merged?
-- What parts of the design do you expect to resolve through the implementation of this feature before stabilization?
-- What related issues do you consider out of scope for this RFC that could be addressed in the future independently of the solution that comes out of this RFC?
+I'd really like to get feedback on the fine-level details of the initial implementation that I described above. I can provide additional information or context if that is helpful too.
 
 # Future possibilities
 
 [future-possibilities]: #future-possibilities
 
-Think about what the natural extension and evolution of your proposal would
-be and how it would affect the language and project as a whole in a holistic
-way. Try to use this section as a tool to more fully consider all possible
-interactions with the project and language in your proposal.
-Also consider how this all fits into the roadmap for the project
-and of the relevant sub-team.
-
-This is also a good place to "dump ideas", if they are out of scope for the
-RFC you are writing but otherwise related.
-
-If you have tried and cannot think of any future possibilities,
-you may simply state that you cannot think of anything.
-
-Note that having something written down in the future-possibilities section
-is not a reason to accept the current or a future RFC; such notes should be
-in the section on motivation or rationale in this or subsequent RFCs.
-The section merely provides additional information.
+This RFC preceeds an RFC introducing a collection context.
