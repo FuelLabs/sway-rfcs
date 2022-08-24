@@ -7,7 +7,7 @@
 
 [summary]: #summary
 
-With it's current design, the Sway compiler faces challenges regarding how declarations interact with the type system and code generation. These include:
+With its current design, the Sway compiler faces challenges regarding how declarations interact with the type system and code generation. These include:
 1. function bodies must be inlined during type checking ([FueLabs/sway#1557](https://github.com/FuelLabs/sway/issues/1557))
 2. monomorphization of declarations is unnecessarily duplicated ([FueLabs/sway#862](https://github.com/FuelLabs/sway/issues/862))
 3. it is currently impossible to implement `where` clauses without extensive special casing/dummy definitions ([FueLabs/sway#970](https://github.com/FuelLabs/sway/issues/970))
