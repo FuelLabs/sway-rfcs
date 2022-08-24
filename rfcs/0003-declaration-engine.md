@@ -138,7 +138,7 @@ Because inlining is still needed for the IR, these instances of `DeclarationDefi
 
 ### Usage
 
-When a declaration is _used_ an internal reference is created that references the existence of a possible declaration in the declaration engine, and that is resolved during the resolution step. Given:
+When a declaration is referred to, a reference to the existence of a possible declaration in the declaration engine is generated. That is resolved during the resolution step. Given:
 
 ```rust
 fn add(x: u64, y: u64) -> u64 {
