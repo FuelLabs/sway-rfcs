@@ -108,7 +108,7 @@ impl DeclarationEngine {
 }
 
 enum DeclarationDefinition {
-    // does not consider Path's
+    // does not consider Paths
     Function(String),
 
     // does not consider Path's
