@@ -69,7 +69,7 @@ The declaration engine takes the concept of constraints and unification and appl
 
 For example, when type checking a function application, the compiler does not need to care about the contents of the body of the function, instead it is sufficient to create a constraint referring to "the return type of the function".
 
-For example, given a typed function declaration `add`, we add this declaration to the declaration engine. Then when type checking a function application of `add`, instead of inlining the function body, we create constraints referring to "the body of `add`" and "the return type of `add`". When type checking a _function application_
+For example, given a typed function declaration `add`, we add this declaration to the declaration engine. Then when type checking a function application of `add`, instead of inlining the function body, we create constraints referring to "the body of `add`" and "the return type of `add`". When type checking a _function application_.
 
 # Reference-level explanation
 
