@@ -118,7 +118,7 @@ enum DeclarationDefinition {
 }
 ```
 
-Then in the typed AST, that declarations could look like (in pseudocode):
+Then in the typed AST, those declarations could look like (in pseudocode):
 
 ```rust
 contract;
