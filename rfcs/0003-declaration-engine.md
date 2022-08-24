@@ -30,7 +30,7 @@ Specifically in the context of Sway terminology, the phrase "type checking" is o
 
 ## Toy Example
 
-(this is an elaborate explanation that most will already be profficient in---but it does build to a good point!)
+(this is an elaborate explanation that most will already be proficient in---but it does build to a good point!)
 
 For the purposes of illustration, imagine a new toy language that is statically and strongly typed, but allows for optional type annotations (like Sway and Rust). The toy compiler that we could write for this toy language would need to evaluate the types of objects at compile time to either correctly compile a program or fail to compile a program (like the Sway compiler and the Rust compiler). The toy compiler would have three broad-strokes steps (1) parsing, (2) type checking, and (3) code generation. Because the toy language allows for optional type annotations, after the parsing step, the toy compiler would know the types for either none, some, or all, of the objects in the program. To compensate for this, the toy compiler would perform type inference, where the types of untyped objects would be inferred from the types of typed objects. 
 
