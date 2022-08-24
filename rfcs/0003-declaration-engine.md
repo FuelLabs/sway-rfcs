@@ -89,7 +89,7 @@ struct DeclarationEngine {
     functions: HashMap<String, TypedFunctionDeclaration>,
 
     // struct name to typed struct declaration
-    // again, this does not consider Path's
+    // again, this does not consider Paths
     structs: HashMap<String, TypedStructDeclaration>,
 
     // enums and traits
