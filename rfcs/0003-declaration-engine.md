@@ -26,7 +26,7 @@ With the changes introduced by this RFC, the compiler will be able to think abou
 
 Because this is an internal compiler RFC, the affected group is the Sway compiler devs.
 
-Specifically in the context of Sway terminology, the phrase "type checking" is often used to refer to the Sway compiler step in which untyped AST nodes are transformed to typed AST nodes. But really, the compier step we refer to "type checking" is actually doing type inference. This distinction is important because it allows us to understand the role of the declaration engine.
+Specifically in the context of Sway terminology, the phrase "type checking" is often used to refer to the Sway compiler step in which untyped AST nodes are transformed to typed AST nodes. But really, the compiler step we refer to "type checking" is actually doing type inference. This distinction is important because it allows us to understand the role of the declaration engine.
 
 ## Toy Example
 
