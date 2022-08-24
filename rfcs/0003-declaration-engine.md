@@ -84,8 +84,8 @@ During type checking of a declaration, the compiler will add information about t
 ```rust
 struct DeclarationEngine {
     // function name to typed function declaration
-    // this example code does not consider Path's, but we could use
-    // a BTreeMap with Path's as the key
+    // this example code does not consider Paths, but we could use
+    // a BTreeMap with Paths as the key
     functions: HashMap<String, TypedFunctionDeclaration>,
 
     // struct name to typed struct declaration
