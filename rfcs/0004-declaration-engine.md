@@ -230,10 +230,10 @@ That being said, from a high-level perspective, the alternative design would be 
 
 [prior-art]: #prior-art
 
-1. [rustc item collection for monomorphization](https://github.com/rust-lang/rust/blob/master/compiler/rustc_monomorphize/src/collector.rs)
-2. [rustc collection item context](https://github.com/rust-lang/rust/blob/master/compiler/rustc_typeck/src/collect.rs#L105)
-3. [idris has a context it uses to resolve types](https://github.com/idris-lang/Idris2/blob/main/src/Core/Context/Context.idr#L417)
-4. @tritao wrote [something similar](https://github.com/tritao/CppSharp/blob/master/src/AST/ASTContext.cs) in his older project.
+1. [rustc item collection for monomorphization](https://github.com/rust-lang/rust/blob/8fe936099a3a2ea236d40212a340fc4a326eb506/compiler/rustc_monomorphize/src/collector.rs)
+2. [rustc collection item context](https://github.com/rust-lang/rust/blob/a8f7e244b785feb1b1d696abf0a7efb5cb7aed30/compiler/rustc_hir_analysis/src/collect.rs)
+3. [idris has a context it uses to resolve types](https://github.com/idris-lang/Idris2/blob/86c060ef13fd8194f849e2a4a4295cd37c0d061c/src/Core/Context/Context.idr)
+4. @tritao wrote [something similar](https://github.com/tritao/CppSharp/blob/22c15789c551ed5d64b05ce48d0353b117865368/src/AST/ASTContext.cs) in his older project.
 
 # Unresolved questions
 
