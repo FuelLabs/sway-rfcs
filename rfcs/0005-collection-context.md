@@ -412,7 +412,7 @@ to something like the Rust `Box` type, which would eliminate this problem.
 
 ## Program Visualization
 
-The `CollectionContext` uses [petgraph](https://crates.io/crates/petgraph) under the hood, meaning we get
+The `CollectionContext` uses [petgraph](https://github.com/petgraph/petgraph) under the hood, meaning we get
 to benefit from how awesome this library is. So, one of the cool things we can do is we can actually print
 the `CollectionContext` to a `.dot` file and visualize the graph.
 
