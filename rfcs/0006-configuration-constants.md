@@ -1,5 +1,5 @@
-- Feature Name: (Configuration Time Constants, `config_time_constants`)
-- Start Date: (fill me in with today's date, 2022-10-01)
+- Feature Name: Configuration Time Constants, `config_time_constants`
+- Start Date: 2022-10-01
 - RFC PR: [FuelLabs/sway-rfcs#0006](https://github.com/FuelLabs/sway-rfcs/pull/19)
 - Sway Issue: [FueLabs/sway#1498](https://github.com/FuelLabs/sway/issues/1498)
 
@@ -63,40 +63,37 @@ The change is not breaking as it is entirely new functionality.
 
 [drawbacks]: #drawbacks
 
-TODO:
+One major drawback is the additional cognitive complexity this adds to the compilation process. If any bug is introduced or the overwriting of the bytecode goes awry in any way, it will result in confusing and inconsistent undefined behavior. We will need to introduce sufficient checks to ensure that an end user would never encounter this situation.
 
-complexity of debugging
-an additional post-compilation stage
-further dependence on the encoder/decoder
-further couples the SDK 
+This increases our reliance on the correctness of the ABI encoder in the SDK, and any version mismatches or bugs in the encoder will result in similarly undefined and unpredictable behavior.
+
+This change also further couples the language to the SDK, further minimizing the use case of writing Sway without the SDK. This can be alleviated by introducing mechanisms to `forc` for defining these values manually, as mentioned in the guide-level explanation.
 
 # Rationale and alternatives
 
 [rationale-and-alternatives]: #rationale-and-alternatives
-TODO
-- Why is this design the best in the space of possible designs?
-- What other designs have been considered and what is the rationale for not choosing them?
-- What is the impact of not doing this?
+
+One alternative is to introduce an environment variables/configuration-time constants section to the transaction format. This could be cleaner, but the impact on Sway would be minimal. Sway would still output a descriptor file, introduce the `configurable` keyword syntax, etc., and the majority of this RFC would still apply. The benefit of adding this to the transaction format would be potential simplification of the process. A couple negatives would be additional churn on the client, VM, and SDK; and further coupling of specifically Sway to the FuelVM.
+
+If we do not implement configuration-time constants, the workflow of deploying contracts and then calling them from scripts (i.e. the main use case of Sway) would still require manually updating contract addresses in the source code. Without an enshrined tool for configuring values like this, it is likely that some third party `sed`-like workaround would develop in the community to the detriment of the Fuel stack developer experience.
+
 
 # Prior art
 
 [prior-art]: #prior-art
 
-TODO
-immutables
-env vars
+[Immutables in Solidity](https://docs.soliditylang.org/en/v0.6.5/contracts.html) are the closest prior art, effectively performing the exact same functionality. Environment variables in traditional software development are also similar in paradigm and utility.
 
 # Unresolved questions
 
 [unresolved-questions]: #unresolved-questions
-TODO
-- What parts of the design do you expect to resolve through the RFC process before this gets merged?
-- What parts of the design do you expect to resolve through the implementation of this feature before stabilization?
-- What related issues do you consider out of scope for this RFC that could be addressed in the future independently of the solution that comes out of this RFC?
+
+This change has been discussed in depth among SDK, Sway, and client developers and there is little ambiguity. There could be further iterations on minor details like the specific syntax in the language and the format of the descriptor file.
 
 # Future possibilities
 
 [future-possibilities]: #future-possibilities
 
-TODO
-advanced const eval within sdk
+Someday, if possible without the SDK importing the compiler, perhaps some constant evaluation of more sophisticated expressions could be done in the SDK, although that's a minor use case. 
+
+It is also possible that configuration time constants are added to the transaction format someday. If that happens, the compiler will not need to change dramatically but the client and SDK will have work to do.
