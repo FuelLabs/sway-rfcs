@@ -9,7 +9,9 @@
 
 Configuration time constants can be conceptualized as traditional environment variables. Some bytecode has been compiled by the Sway compiler, and the SDK would like to configure some behavior of that bytecode with additional inputs that won't trigger a recompile.
 
-There is a similar feature that was implemented [here](https://github.com/FuelLabs/sway/pull/2549), but that was a mistaken interpretation of the requirements. In #2549, a recompile still occurs and the new values are injected via `Forc.toml`, when we actually want these values to be injectable by the SDK.
+There is a similar feature that was implemented [here][pr_2549], but that was a mistaken interpretation of the requirements. In [#2549][pr_2549], a recompile still occurs and the new values are injected via `Forc.toml`, when we actually want these values to be injectable by the SDK.
+
+[pr_2549]: https://github.com/FuelLabs/sway/pull/2549
 
 # Motivation
 
