@@ -9,7 +9,9 @@
 
 Configuration time constants can be conceptualized as traditional environment variables. Some bytecode has been compiled by the Sway compiler, and the SDK would like to configure some behavior of that bytecode with additional inputs that won't trigger a recompile.
 
-There is a similar feature that was implemented [here](https://github.com/FuelLabs/sway/pull/2549), but that was a mistaken interpretation of the requirements. In #2549, a recompile still occurs and the new values are injected via `Forc.toml`, when we actually want these values to be injectable by the SDK.
+There is a similar feature that was implemented [here][pr_2549], but that was a mistaken interpretation of the requirements. In [#2549][pr_2549], a recompile still occurs and the new values are injected via `Forc.toml`, when we actually want these values to be injectable by the SDK.
+
+[pr_2549]: https://github.com/FuelLabs/sway/pull/2549
 
 # Motivation
 
@@ -45,6 +47,7 @@ fn main() { ... }
 ```
 
 If you are not using the SDK, it will be possible to define these values either by passing a flag to `forc` or including them in the `Forc.toml` manifest file.
+Bikeshed: We'll need to specify which one has priority if both are supplied. (Probably flag is 1st priority, then Forc.toml) TODO
 
 
 # Reference-level explanation
@@ -59,11 +62,37 @@ The range from the offset to the offset plus the size of the type will represent
 
 The change is not breaking as it is entirely new functionality.
 
+Are there any restriction on where configuration time constants can be declared? Are they only allowed at global scope for example? I don't recall what we do with const today.
+TODO
+
+`pub` keyword? TODO 
+
+## Deploying with the SDK
+TODO
+
+## Deploying without the SDK
+TODO
+
+## Failure to provide constants
+
+## Interactions with optimization passes
+Configuration time constants are not allowed to be optimized away or constant folded or really touched in any way (for example, a config struct cannot be broken into into its individual elements). They always need an actual spot in the bytecode. So, the optimizor has take that into account.
+
+## Allowed Types
+Can you add a note about the types allowed? If we want to allow any type (not just primitive ones), then we should say that the SDK needs to follow the same data layout described in the ABI spec when injecting the constants in the bytecode.
+
+
+## Memory layout
+I think the RFC should specify how these constants are initialized. I'm assuming they will be initialized to zero (and whatever that means for enums etc.) but we should be explicit about that. That being said, do also want to allow explicit initialization?
+TODO
+
+
 # Drawbacks
 
 [drawbacks]: #drawbacks
 
 One major drawback is the additional cognitive complexity this adds to the compilation process. If any bug is introduced or the overwriting of the bytecode goes awry in any way, it will result in confusing and inconsistent undefined behavior. We will need to introduce sufficient checks to ensure that an end user would never encounter this situation.
+Could you elaborate on what kinds of checks you are picturing? TODO
 
 This increases our reliance on the correctness of the ABI encoder in the SDK, and any version mismatches or bugs in the encoder will result in similarly undefined and unpredictable behavior.
 
