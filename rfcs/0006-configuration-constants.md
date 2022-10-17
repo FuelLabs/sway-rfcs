@@ -46,8 +46,7 @@ fn main() { ... }
 }
 ```
 
-If you are not using the SDK, it will be possible to define these values either by passing a flag to `forc` or including them in the `Forc.toml` manifest file.
-Bikeshed: We'll need to specify which one has priority if both are supplied. (Probably flag is 1st priority, then Forc.toml) TODO
+If you are not using the SDK, it will be possible to define these values either by passing a flag to `forc` or including them in the `Forc.toml` manifest file. If both are present, then the flag takes priority over the manifest.
 
 
 # Reference-level explanation
@@ -62,37 +61,35 @@ The range from the offset to the offset plus the size of the type will represent
 
 The change is not breaking as it is entirely new functionality.
 
-Are there any restriction on where configuration time constants can be declared? Are they only allowed at global scope for example? I don't recall what we do with const today.
-TODO
+Configuration time constants may be defined anywhere in a Sway program. They are aggregated by the compiler, even if they are in a dependency, and reported to the SDK/`forc`. This allows for libraries to rely on configurable values directly.
 
-`pub` keyword? TODO 
+The `pub` keyword will operate as normal: if it is `pub`, then it is public and importable from elsewhere in the Sway program. If not, then it is only referencable in the scope it is defined within.
 
-## Deploying with the SDK
-TODO
+## Deploying with and without the SDK
 
-## Deploying without the SDK
-TODO
+With the SDK, the deployment and assignment of values will all be handled within the SDK's API. Without the SDK, `forc` will accept command line arguments to specify these values, or allow for their specification in the manifest. In the future, we may wish to introduce more methods of defining these values, like environment variables, but it will not be necessary for the MVP. If the values are specified in more than one way, the SDK would take precedence. This is because the SDK does not actually compile the bytecode in this process; it merely overwrites the indices. This is final and precedence cannot be specified by the user.
 
 ## Failure to provide constants
 
+If the constants are not provided, the SDK and/or `forc` should throw an error. Both tools have knowledge of the required constants due to the descriptor file, so they may check for the constants' presence and report a descriptive error if any are missing.
+
 ## Interactions with optimization passes
+
 Configuration time constants are not allowed to be optimized away or constant folded or really touched in any way (for example, a config struct cannot be broken into into its individual elements). They always need an actual spot in the bytecode. So, the optimizor has take that into account.
 
 ## Allowed Types
-Can you add a note about the types allowed? If we want to allow any type (not just primitive ones), then we should say that the SDK needs to follow the same data layout described in the ABI spec when injecting the constants in the bytecode.
 
+Any type that can be handled by the ABI encoder and decoder can be passed along as a config-time constant.
 
 ## Memory layout
-I think the RFC should specify how these constants are initialized. I'm assuming they will be initialized to zero (and whatever that means for enums etc.) but we should be explicit about that. That being said, do also want to allow explicit initialization?
-TODO
 
+There are two ways in which config time constants will be initialized. If no value is specified at compile time (i.e. by `forc` or the manifest file), then the data section entry is left as null memory (zeroed out). If there is a value specified, then at compile time we are aware of the value and can write it to the data section. 
 
 # Drawbacks
 
 [drawbacks]: #drawbacks
 
-One major drawback is the additional cognitive complexity this adds to the compilation process. If any bug is introduced or the overwriting of the bytecode goes awry in any way, it will result in confusing and inconsistent undefined behavior. We will need to introduce sufficient checks to ensure that an end user would never encounter this situation.
-Could you elaborate on what kinds of checks you are picturing? TODO
+One major drawback is the additional cognitive complexity this adds to the compilation process. If any bug is introduced or the overwriting of the bytecode goes awry in any way, it will result in confusing and inconsistent undefined behavior. We will need to introduce sufficient checks to ensure that an end user would never encounter this situation. An example of testing this behavior would be integration tests that pass in the majority of the ABI-encodable types, fuzzed, as config time constants, and assessing behavior.
 
 This increases our reliance on the correctness of the ABI encoder in the SDK, and any version mismatches or bugs in the encoder will result in similarly undefined and unpredictable behavior.
 
