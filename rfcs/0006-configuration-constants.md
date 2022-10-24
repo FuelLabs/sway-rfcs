@@ -17,7 +17,7 @@ There is a similar feature that was implemented [here][pr_2549], but that was a 
 
 [motivation]: #motivation
 
-This supports the use case of configurable values post-compile-time but pre-runtime, similar to Solidity's `immutable` concept or environment variables in traditional programming. This allows for, e.g., updating contract addresses without recompiling the bytecode.
+The primary and only motivation that requires this feature is contract factories. To construct a set of trusted contracts from some template, we need to have a mapping of which parts of the bytecode are just configuration variables and which parts are application logic. By comparing the version with zeroed-out constants we can assert that two contracts are the same, modulo their configuration time constants.
 
 # Guide-level explanation
 
@@ -31,7 +31,10 @@ The configuration variables for a program can be identified by the `configurable
 // main.sw
 script;
 
-configurable CONTRACT_ADDRESS: b256;
+configurable {
+    CONTRACT_ADDRESS: b256,
+    PRICE_RATIO: u64,
+}
 
 fn main() { ... }
 ```
@@ -46,7 +49,7 @@ fn main() { ... }
 }
 ```
 
-If you are not using the SDK, it will be possible to define these values either by passing a flag to `forc` or including them in the `Forc.toml` manifest file. If both are present, then the flag takes priority over the manifest.
+If you are not using the SDK, it will be possible to define these values by specifying a `constants.sw` flag. This will work with the [notion of contract dependencies](https://github.com/FuelLabs/sway-rfcs/pull/19#issuecomment-1286351753). This Sway file must export the required constants as specified by the `configurable` block.
 
 
 # Reference-level explanation
@@ -61,7 +64,7 @@ The range from the offset to the offset plus the size of the type will represent
 
 The change is not breaking as it is entirely new functionality.
 
-Configuration time constants may be defined anywhere in a Sway program. They are aggregated by the compiler, even if they are in a dependency, and reported to the SDK/`forc`. This allows for libraries to rely on configurable values directly.
+Configuration time constants may not be defined in any library code and must be defined at the top level. Should a library need to reference a configurable value, it should utilize design patterns such as the [builder pattern](https://en.wikipedia.org/wiki/Builder_pattern) to ingest the constants from the top level.
 
 The `pub` keyword will operate as normal: if it is `pub`, then it is public and importable from elsewhere in the Sway program. If not, then it is only referencable in the scope it is defined within.
 
@@ -75,7 +78,7 @@ If the constants are not provided, the SDK and/or `forc` should throw an error. 
 
 ## Interactions with optimization passes
 
-Configuration time constants are not allowed to be optimized away or constant folded or really touched in any way (for example, a config struct cannot be broken into into its individual elements). They always need an actual spot in the bytecode. So, the optimizor has take that into account.
+Configuration time constants are not allowed to be optimized away or constant folded or really touched in any way (for example, a config struct cannot be broken into into its individual elements). They always need an actual spot in the bytecode. So, the optimizor has take that into account. This can be accomplished with a "configurable" section that is entirely different from the data section. This new section can be left untouched by the rest of the compilation process.
 
 ## Allowed Types
 
