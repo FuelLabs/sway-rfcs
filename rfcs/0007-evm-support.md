@@ -167,8 +167,64 @@ the EOFv1 changes are implemented.
 A submodule in the standard library to implement EVM types is needed, but abstract data types can
 remain largely unchanged.
 
-Other libraries with implementations unique to the Fuel VM will also need rewrites, for example the
-reentrancy library.
+Necessary, unique modules include (but may not be limited to):
+
+- external calls
+    - payable
+    - nonpayable
+    - static
+    - delegate
+- (de)serialization
+    - encode
+    - encode packed
+    - encode with selector
+    - encode with signature
+    - encode call
+- code read
+    - size
+    - hash
+    - copy
+- deploy
+    - create
+    - create2
+    - create3 (maybe)
+- raw storage
+    - store
+    - load
+    - sstore2
+- reentrancy
+    - detection
+    - prevention
+- math
+    - unsafe
+    - fixed point
+- precompiles
+    - ecrecover
+    - sha256
+    - ripemd160
+    - identity
+    - modexp
+    - ecadd
+    - ecmul
+    - ecpairing
+    - blake2f
+- tx info
+    - gasprice
+    - origin
+    - gasleft
+- block info
+    - hash
+    - basefee
+    - coinbase
+    - prevrandao
+    - gaslimit
+    - number
+    - timestamp
+- call info
+    - data
+    - sender
+    - selector
+    - value
 
 ## Inline Assembly
 
