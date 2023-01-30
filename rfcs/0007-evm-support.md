@@ -669,3 +669,73 @@ non-existent. This will allow EVM engineers to design more secure smart contract
 alike, will boost Sway's total TVL in the [Defi LLama Language TVL Listings](https://defillama.com/languages),
 and will spark interest in the language enough to bring engineers into the Fuel ecosystem with
 marginal learning overhead.
+
+## ERC Compliant Casing Option
+
+A nice-to-have specifically for the EVM would be to have a way to modify the function signature and
+selector to conform to "Etheruem Request for Comment" standards. Sway follows patterns of Rust,
+which, according to the [Rust Style Guide](https://doc.rust-lang.org/1.0.0/style/style/naming/README.html),
+functions should be defined in snake case, that is all lower case with words separated by
+underscores. However, ERC standards almost exclusively define external functions in camel case, that
+is the first word is lower case and following words have their first letter capitalized. This may
+create issues with formatting, such as in Vyper contracts that conform to the Python style guide,
+[PEP8](https://peps.python.org/pep-0008/#function-and-variable-names) where either all functions
+must be in camel case, breaking style guides, or only internal functions may be snake case. The
+[Snekmate Repository](https://github.com/pcaversaccio/snekmate) follows the latter pattern.
+
+To avoid the issue of having to break style conventions, having an optional function attribute to
+alter the final function signature may be desireable. The following is what this may look like.
+
+```rs
+abi Erc20 {
+    fn balance_of(owner: Identity) -> b256;
+    // -- snip --
+}
+
+impl Erc20 for Contract {
+    #[camelcase]
+    fn balance_of(owner: Identity) -> b256 {
+        // -- snip --
+    }
+    // -- snip --
+}
+```
+
+This would change the final ABI from the first JSON snippet to the second.
+
+Without `#[camelcase]` attribute (default).
+
+```json
+{
+    "name": "balance_of",
+    "type": "function",
+    "inputs": [
+        { "name": "owner", "type": "address" }
+    ],
+    "outputs": [
+        { "name": "", "type": "uint256" }
+    ]
+}
+```
+
+With `#[camelcase]` attribute.
+
+```json
+{
+    "name": "balanceOf",
+    "type": "function",
+    "inputs": [
+        { "name": "owner", "type": "address" }
+    ],
+    "outputs": [
+        { "name": "", "type": "uint256" }
+    ]
+}
+```
+
+This changes the external ABI as well as the function selector.
+
+| signature             | selector     |
+| --------------------- | ------------ |
+| `balance_of(address)` | `0xb144adfb` |
+| `balanceOf(address)`  | `0x70a08231` |
