@@ -91,6 +91,24 @@ Any type that can be handled by the ABI encoder and decoder can be passed along 
 
 The memory layout of configurable variables is identical to the memory layout of `const` variables which also matches the layout described in the [Argument Encoding](https://fuellabs.github.io/fuel-specs/master/protocol/abi/argument_encoding.html) section of the ABI spec.
 
+## Specifying configuration-time constants for contract-dependencies in `Forc.toml`
+
+With the recent introduction of [`[contract-dependencies]`](https://github.com/FuelLabs/sway/pull/3016), it would be necessary to allow `forc` projects to specify the configuration constants declared within each of their contract-dependencies. This is important in allowing the user to refer to a specific contract, and to make sure we are constructing the correct contract ID constants during build.
+
+With configuration time constants, declaring `[contract-dependencies]` in `Forc.toml` might look something like:
+
+```toml
+[contract-dependencies]
+foo = { git = "https://domain.com/owner/repo", config = "config/foo.sw" }
+```
+
+where `config/foo.sw` has a single `configurable` block with each constant value specified.
+
+Alternatively, we could remove the need to specify the `config` file location manually by making the `config/` directory a standard location. We could require that, for each contract-dependency that has a `configurable` block, a file exists in the `config/` directory that matches the name of the dependency with `.sw` appended (e.g. `config/foo.sw`). In the case that no `config/foo.sw` file is present, we could either:
+
+1. produce an error, or
+2. fallback to using the contract dependency's default values, indicating that we are falling back with a `info!` log or similar.
+
 # Drawbacks
 
 [drawbacks]: #drawbacks
