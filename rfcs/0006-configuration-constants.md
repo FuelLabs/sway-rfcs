@@ -23,34 +23,43 @@ The primary and only motivation that requires this feature is contract factories
 
 [guide-level-explanation]: #guide-level-explanation
 
-When a Sway program is compiled, a set of artifacts are produced. Included in these artifacts are a JSON ABI descriptor, a configuration-time-constant descriptor, and the actual bytecode. The object we are discussing here is the configuration-time-constant descriptor, which describes the specific offset within the bytecode, in terms of bytes, to the data section entry for a particular configuration variable.
+When a Sway program is compiled, a set of artifacts are produced. Included in these artifacts are a [JSON ABI descriptor](https://fuellabs.github.io/fuel-specs/master/protocol/abi/json_abi_format.html#json-abi-spec) containing a configuration-time-constant descriptor, and the actual bytecode. The object we are discussing here is the configuration-time-constant descriptor, which describes the specific offset within the bytecode, in terms of bytes, to the data section entry for a particular configuration variable.
 
-The configuration variables for a program can be identified by the `configurable` keyword within the Sway language. This denotes a constant within the program that has no known value at compile time. The value will be provided at configuration time by the SDK or some other consumer of the configuration-time-constant descriptor. As an example:
+The configuration variables for a program are declared in a `configurable` block similarly to `storage` variables. Each configurable variable requires a type annotation as well as an initializer. The value of each configurable variable can be overriden at configuration time by the SDK, `forc`, or some other consumer of the configuration-time-constant descriptor. As an example:
 
 ```rust
 // main.sw
 script;
 
 configurable {
-    CONTRACT_ADDRESS: b256,
-    PRICE_RATIO: u64,
+    CONTRACT_ADDRESS: b256 = 0x0000000000000000000000000000000000000000000000000000000000000000,
+    PRICE_RATIO: u64 = 0,
 }
 
-fn main() { ... }
+fn main() -> (u64, b256) { 
+    (PRICE_RATIO, CONTRACT_ADDRESS)
+}
 ```
-```
-// configurable-constants.json
-
+```json
+// project-abi.json
 {
-    "CONTRACT_ADDRESS": {
-        "type": "b256",
-        "offset": "12345"
-    }
-}
+  ...
+  "configurables": [
+    {
+      "configurableType": {
+        "name": "",
+        "type": 3,
+        "typeArguments": null
+      },
+      "name": "CONTRACT_ADDRESS",
+      "offset": 3260
+    },
+    ...
+  ],
+  ...
 ```
 
 As `configurable` values will affect a contract's ID, `forc` users must be able to specify these values for each of their contract dependencies. To enable this, `forc` will allow users to specify a `config/<contract-dependency-name>.sw` file for each contract dependency that contains configurable values. This Sway file must export the required constants as specified by the contract dependency's `configurable` block. These files will be compiled independently for each contract dependency, and the resulting `configurable` bytecode section for each dependency will be used to replace its default `configurable` bytecode section.
-
 
 # Reference-level explanation
 
@@ -58,19 +67,13 @@ As `configurable` values will affect a contract's ID, `forc` users must be able 
 
 The `type` field of the JSON file should describe the type of the configurable in the same manner as types are described in the JSON ABI file.
 
-No two configurables in a program should have the same name to prevent collisions.
+A single `configurable` block is allowed in a program and no two configurable variables in a program should have the same name to prevent collisions.
 
-The range from the offset to the offset plus the size of the type will represent bytes within the bytecode that will be overwritten by the SDK, which will write values according to the ABI encoder's memory layout, which is consistent with Sway's memory layout.
+The range from the offset to the offset plus the size of the type will represent bytes within the bytecode that will be overwritten by the SDK (or `forc`), which will write values according to the ABI encoder's memory layout, which is consistent with Sway's memory layout.
 
 The change is not breaking as it is entirely new functionality.
 
 Configuration time constants may not be defined in any library code and must be defined at the top level. Should a library need to reference a configurable value, it should utilize design patterns such as the [builder pattern](https://en.wikipedia.org/wiki/Builder_pattern) to ingest the constants from the top level.
-
-The `pub` keyword will operate as normal: if it is `pub`, then it is public and importable from elsewhere in the Sway program. If not, then it is only referencable in the scope it is defined within.
-
-## Deploying with and without the SDK
-
-With the SDK, the deployment and assignment of values will all be handled within the SDK's API. Without the SDK, `forc` will accept command line arguments to specify these values, or allow for their specification in the manifest. In the future, we may wish to introduce more methods of defining these values, like environment variables, but it will not be necessary for the MVP. If the values are specified in more than one way, the SDK would take precedence. This is because the SDK does not actually compile the bytecode in this process; it merely overwrites the indices. This is final and precedence cannot be specified by the user.
 
 ## Failure to provide constants
 
@@ -78,7 +81,7 @@ If the constants are not provided, the SDK and/or `forc` should throw an error. 
 
 ## Interactions with optimization passes
 
-Configuration time constants are not allowed to be optimized away or constant folded or really touched in any way (for example, a config struct cannot be broken into into its individual elements). They always need an actual spot in the bytecode. So, the optimizor has take that into account. This can be accomplished with a "configurable" section that is entirely different from the data section. This new section can be left untouched by the rest of the compilation process.
+Configuration time constants are not allowed to be optimized away or constant folded or really touched in any way (for example, a config struct cannot be broken into into its individual elements). They always need an actual spot in the bytecode. So, the optimizor has take that into account. This can be accomplished with a "configurable" section that is entirely different from the data section and that can be left untouched by the rest of the compilation process. That being said, configurable variables that have no uses in a Sway program should be omitted from both the bytecode and the JSON ABI descriptor.
 
 ## Allowed Types
 
@@ -86,7 +89,7 @@ Any type that can be handled by the ABI encoder and decoder can be passed along 
 
 ## Memory layout
 
-There are two ways in which config time constants will be initialized. If no value is specified at compile time (i.e. by `forc` or the manifest file), then the data section entry is left as null memory (zeroed out). If there is a value specified, then at compile time we are aware of the value and can write it to the data section. 
+The memory layout of configurable variables is identical to the memory layout of `const` variables which also matches the layout described in the [Argument Encoding](https://fuellabs.github.io/fuel-specs/master/protocol/abi/argument_encoding.html) section of the ABI spec.
 
 # Drawbacks
 
