@@ -49,7 +49,7 @@ fn main() { ... }
 }
 ```
 
-If you are not using the SDK, it will be possible to define these values by specifying a `constants.sw` flag. This will work with the [notion of contract dependencies](https://github.com/FuelLabs/sway-rfcs/pull/19#issuecomment-1286351753). This Sway file must export the required constants as specified by the `configurable` block.
+As `configurable` values will affect a contract's ID, `forc` users must be able to specify these values for each of their contract dependencies. To enable this, `forc` will allow users to specify a `config/<contract-dependency-name>.sw` file for each contract dependency that contains configurable values. This Sway file must export the required constants as specified by the contract dependency's `configurable` block. These files will be compiled independently for each contract dependency, and the resulting `configurable` bytecode section for each dependency will be used to replace its default `configurable` bytecode section.
 
 
 # Reference-level explanation
