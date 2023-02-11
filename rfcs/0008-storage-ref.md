@@ -51,7 +51,8 @@ pub trait AsStorageRef<T> {
 }
 ```
 
-Calling `as_storage_ref` is only valid for a storage accesses. A storage access looks like `storage.a.b.c...`. For example
+Calling `as_storage_ref` is only valid for a storage accesses. A storage access looks like `storage.a.b.c...`. For example:
+
 ```rust
 struct MyStruct {
     x: u64,
@@ -63,23 +64,23 @@ storage {
 }
 
 fn foo() {
-    let x_ref: StorageRef<u64> = storage.s.x.as_ref();
-    let y_ref: StorageRef<b56> = storage.s.y.as_ref();
-    let s_ref: StorageRef<MyStruct> = storage.s.as_ref();
+    let x_ref: StorageRef<u64> = storage.s.x.as_storage_ref();
+    let y_ref: StorageRef<b56> = storage.s.y.as_storage_ref();
+    let s_ref: StorageRef<MyStruct> = storage.s.as_storage_ref();
 }
 ```
 
 In order to use a storage reference, one can call `store` and `get` as follows:
-```
-let x_ref: StorageRef<u64> = storage.s.x.as_ref();
+```rust
+let x_ref: StorageRef<u64> = storage.s.x.as_storage_ref();
 x_ref.store(42); // equivalent to `storage.x = 42`
 let x = x_ref.get(); // equivalent to `let x = storage.s.x`
 
-let y_ref: StorageRef<u64> = storage.s.y.as_ref();
+let y_ref: StorageRef<u64> = storage.s.y.as_storage_ref();
 y_ref.store(ZERO_B256); // equivalent to `storage.y = ZERO_B256`
 let y = y_ref.get(); // equivalent to `let y = storage.s.y`
 
-let s_ref: StorageRef<MyStruct> = storage.s.as_ref();
+let s_ref: StorageRef<MyStruct> = storage.s.as_storage_ref();
 s_ref.store(MyStruct { x: 42, y: ZERO_B256 } ); // equivalent to `storage.s = MyStruct { x: 42, y: ZERO_B256 }`
 let s = s_ref.get(); // equivalent to `let s = storage.s`
 ```
@@ -88,14 +89,102 @@ let s = s_ref.get(); // equivalent to `let s = storage.s`
 
 [reference-level-explanation]: #reference-level-explanation
 
-This is the technical portion of the RFC. Explain the design in sufficient detail that:
+One way of implementing `as_storage_ref` is via the `__get_storage_key` intrinsic:
 
-- Its interaction with other features is clear.
-- It is reasonably clear how the feature would be implemented.
-- Corner cases are dissected by example.
-- If this change is breaking, mention the impact of it here and how the breaking change should be managed.
+```rust
+impl AsStorageRef<T> for T {
+    #[inline(always)]
+    fn as_storage_ref() -> StorageRef<T> {
+        StorageRef {
+            key: __get_storage_key()
+        }
+    }
+}
+```
 
-The section should return to the examples given in the previous section, and explain more fully how the detailed proposal makes those examples work.
+Currently, the intrinsic just returns the storage key corresponding to the top level storage variable. It should be extended to return the storage key of an arbitrary storage accesses `storage.a.b.c...`.
+
+## Implementing `StorageMap` using `StorageRef`.
+
+The current implementation of `insert` and `get` for `StorageMap` rely on the intrinsic `__get_storage_key` directly. Instead, the implementation should use `StorageRef` directly, potentially as follows:
+
+```rust
+/// A persistent key-value pair mapping struct.
+pub struct StorageMap<K, V> {}
+
+impl<K, V> StorageMap<K, V> {
+    #[storage(write)]
+    pub fn insert(self: StorageRef<Self>, key: K, value: V) {
+        let key = sha256((key, self.key));
+        store::<V>(key, value);
+    }
+
+    #[storage(read)]
+    pub fn get(self: StorageRef<Self>, key: K) -> Option<V> {
+        let key = sha256((key, self.key));
+        get::<V>(key)
+    }
+
+    #[storage(write)]
+    pub fn remove(self: StorageRef<Self>, key: K) -> bool {
+        let key = sha256((key, self.key));
+        clear::<V>(key)
+    }
+}
+```
+
+This should still allow writing the following:
+
+```rust
+storage {
+    my_map: StorageMap<u64, u64> = StorageMap {}
+}
+
+my_map.insert(0, 0);
+let x = my_map.get(0);
+my_map.as_storage_ref().remove(0);
+```
+
+If the compiler does not allow arbitrary `self` types at the moment, this should be changed to allow at least `StorageRef`. This is currently allowed in Rust for specific types such as `Rc` and `Arc` so it might make sense for Sway to allow only `StorageRef` for now.
+
+Note that the methods of `StorageMap` should be callable using directly as in `storage.my_map.insert(..)` or by calling `as_storage_ref()` first as in `storage.my_map.as_storage_ref().insert(..)`. This may require a coercion between `T` and `StorageRef<T>`.
+
+A similar approach for `StorageVec` can be followed.
+
+## `StorageMap` and `StorageVec` in structs.
+
+Writing the code below will be automatically possible after implementation all of the above:
+
+```rust
+MyStruct {
+    map1: StorageMap<u64, u64>,
+    map2: StorageMap<u64, u64>,
+}
+
+storage {
+    s: Mystruct = MyStruct {
+        map1: StorageMap { },
+        map2: StorageMap { },
+    }
+}
+
+storage.s.map1.insert(0, 0);
+let x = storage.s.map2.get(0);
+```
+
+It will also be possible to pass a `StorageMap` to a function by passing a `StorageRef` to it as follows:
+
+```rust
+storage {
+    my_map: StorageMap<u64, u64> = StorageMap {}
+}
+
+fn foo(map: StorageRef<StorageMap<u64, u64>>) {
+    map.insert(0, 0);
+}
+```
+
+> **Note**: **none of the changes proposed in this RFC are breaking. Existing user code is expected to contiue working as expected**
 
 # Drawbacks
 
