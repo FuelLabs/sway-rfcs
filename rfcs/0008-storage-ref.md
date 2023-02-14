@@ -1,4 +1,4 @@
-- Feature Name: Storage References
+- Feature Name: Storage Handlers
 - Start Date: 2023-02-10)
 - RFC PR: [FuelLabs/sway-rfcs#0008](https://github.com/FuelLabs/sway-rfcs/pull/023)
 - Sway Issue: [FueLabs/sway#0000](https://github.com/FuelLabs/sway/issues/3043)
@@ -19,10 +19,10 @@ Why are we doing this? What use cases does it support? What is the expected outc
 
 [guide-level-explanation]: #guide-level-explanation
 
-A storage reference stores a `b256` key that describes a storage slot:
+A storage handler stores a `b256` key that describes a storage slot:
 
 ```rust
-pub struct StorageRef<T> {
+pub struct StorageHandler<T> {
     key: b256,
 }
 ```
@@ -30,7 +30,7 @@ pub struct StorageRef<T> {
 We can implement `store` and `get` as follows:
 
 ```rust
-impl<T> StorageRef<T> {
+impl<T> StorageHandler<T> {
     #[storage(read)]
     pub fn get(self) -> Option<T> {
         std::storage::get(self.key)
@@ -43,15 +43,7 @@ impl<T> StorageRef<T> {
 }
 ```
 
-One can create a `StorageRef` manually (it's really just a wrapper around a `b256` key) or via a call to `as_storage_ref` from a new trait called `AsStorageRef`:
-
-```rust
-pub trait AsStorageRef<T> {
-    fn as_storage_ref(self) -> StorageRef<T>;
-}
-```
-
-Calling `as_storage_ref` is only valid for a storage accesses. A storage access looks like `storage.a.b.c...`. For example:
+With the `StorageHandler` type available, we propose that the type of the expression `storage.x.y.z...` become `StorageHandler` instead of directly returing the actual data in storage.
 
 ```rust
 struct MyStruct {
@@ -64,49 +56,33 @@ storage {
 }
 
 fn foo() {
-    let x_ref: StorageRef<u64> = storage.s.x.as_storage_ref();
-    let y_ref: StorageRef<b56> = storage.s.y.as_storage_ref();
-    let s_ref: StorageRef<MyStruct> = storage.s.as_storage_ref();
+    let x_ref: StorageHandler<u64> = storage.s.x;
+    let y_ref: StorageHandler<b56> = storage.s.y;
+    let s_ref: StorageHandler<MyStruct> = storage.s;
 }
 ```
 
-In order to use a storage reference, one can call `store` and `get` as follows:
+In order to use a storage handler, one can call `store` and `get` as follows:
+
 ```rust
-let x_ref: StorageRef<u64> = storage.s.x.as_storage_ref();
-x_ref.store(42); // equivalent to `storage.x = 42`
-let x = x_ref.get(); // equivalent to `let x = storage.s.x`
+let x_ref: StorageHandler<u64> = storage.s.x;
+x_ref.store(42);
 
-let y_ref: StorageRef<u64> = storage.s.y.as_storage_ref();
-y_ref.store(ZERO_B256); // equivalent to `storage.y = ZERO_B256`
-let y = y_ref.get(); // equivalent to `let y = storage.s.y`
+storage.s.y.store(ZERO_B256);
+let y:Option<b256> = storage.s.y.get();
 
-let s_ref: StorageRef<MyStruct> = storage.s.as_storage_ref();
-s_ref.store(MyStruct { x: 42, y: ZERO_B256 } ); // equivalent to `storage.s = MyStruct { x: 42, y: ZERO_B256 }`
-let s = s_ref.get(); // equivalent to `let s = storage.s`
+let s_ref: StorageHandler<MyStruct> = storage.s;
+s_ref.store(MyStruct { x: 42, y: ZERO_B256 } );
+let s:Option<MyStruct> = s_ref.get();
 ```
 
 # Reference-level explanation
 
 [reference-level-explanation]: #reference-level-explanation
 
-One way of implementing `as_storage_ref` is via the `__get_storage_key` intrinsic:
+## Implementing `StorageMap` using `StorageHandler`.
 
-```rust
-impl AsStorageRef<T> for T {
-    #[inline(always)]
-    fn as_storage_ref() -> StorageRef<T> {
-        StorageRef {
-            key: __get_storage_key()
-        }
-    }
-}
-```
-
-Currently, the intrinsic just returns the storage key corresponding to the top level storage variable. It should be extended to return the storage key of an arbitrary storage accesses `storage.a.b.c...`.
-
-## Implementing `StorageMap` using `StorageRef`.
-
-The current implementation of `insert` and `get` for `StorageMap` rely on the intrinsic `__get_storage_key` directly. Instead, the implementation should use `StorageRef` directly, potentially as follows:
+The current implementation of `insert` and `get` for `StorageMap` rely on the intrinsic `__get_storage_key` directly. Instead, the implementation should use `StorageHandler` directly, potentially as follows:
 
 ```rust
 /// A persistent key-value pair mapping struct.
@@ -114,19 +90,19 @@ pub struct StorageMap<K, V> {}
 
 impl<K, V> StorageMap<K, V> {
     #[storage(write)]
-    pub fn insert(self: StorageRef<Self>, key: K, value: V) {
+    pub fn insert(self: StorageHandler<Self>, key: K, value: V) {
         let key = sha256((key, self.key));
         store::<V>(key, value);
     }
 
     #[storage(read)]
-    pub fn get(self: StorageRef<Self>, key: K) -> Option<V> {
+    pub fn get(self: StorageHandler<Self>, key: K) -> Option<V> {
         let key = sha256((key, self.key));
         get::<V>(key)
     }
 
     #[storage(write)]
-    pub fn remove(self: StorageRef<Self>, key: K) -> bool {
+    pub fn remove(self: StorageHandler<Self>, key: K) -> bool {
         let key = sha256((key, self.key));
         clear::<V>(key)
     }
@@ -142,12 +118,10 @@ storage {
 
 my_map.insert(0, 0);
 let x = my_map.get(0);
-my_map.as_storage_ref().remove(0);
+my_map.remove(0);
 ```
 
-If the compiler does not allow arbitrary `self` types at the moment, this should be changed to allow at least `StorageRef`. This is currently allowed in Rust for specific types such as `Rc` and `Arc` so it might make sense for Sway to allow only `StorageRef` for now.
-
-Note that the methods of `StorageMap` should be callable using directly as in `storage.my_map.insert(..)` or by calling `as_storage_ref()` first as in `storage.my_map.as_storage_ref().insert(..)`. This may require a coercion between `T` and `StorageRef<T>`.
+If the compiler does not allow arbitrary `self` types at the moment, this should be changed to allow at least `StorageHandler`. This is currently allowed in Rust for specific types such as `Rc` and `Arc` so it might make sense for Sway to allow only `StorageHandler` for now.
 
 A similar approach for `StorageVec` can be followed.
 
@@ -172,19 +146,56 @@ storage.s.map1.insert(0, 0);
 let x = storage.s.map2.get(0);
 ```
 
-It will also be possible to pass a `StorageMap` to a function by passing a `StorageRef` to it as follows:
+It will also be possible to pass a `StorageMap` to a function by passing a `StorageHandler` to it as follows:
 
 ```rust
 storage {
     my_map: StorageMap<u64, u64> = StorageMap {}
 }
 
-fn foo(map: StorageRef<StorageMap<u64, u64>>) {
+fn foo(map: StorageHandler<StorageMap<u64, u64>>) {
     map.insert(0, 0);
+}
+
+fn bar() {
+    foo(storage.my_map); 
 }
 ```
 
-> **Note**: **none of the changes proposed in this RFC are breaking. Existing user code is expected to contiue working as expected**
+## "Counter" Example with the new syntax
+
+```rust
+contract;
+
+abi TestContract {
+    #[storage(write)]
+    fn initialize_counter(value: u64) -> u64;
+
+    #[storage(read, write)]
+    fn increment_counter(amount: u64) -> u64;
+}
+
+storage {
+    counter: u64 = 0,
+}
+
+impl TestContract for Contract {
+    #[storage(write)]
+    fn initialize_counter(value: u64) -> u64 {
+        storage.counter.store(value);
+        value
+    }
+
+    #[storage(read, write)]
+    fn increment_counter(amount: u64) -> u64 {
+        let incremented = storage.counter.get().unwrap_or(0) + amount; // or maybe a shorthand `stoarge.counter.get_or_default()` here
+        storage.counter.store(incremented);
+        incremented
+    }
+}
+```
+
+Examples using storage maps and vectors will not look any different than they used to with this new approach.
 
 # Drawbacks
 
