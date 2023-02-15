@@ -193,15 +193,15 @@ There are two possible empty types: structs with no fields and enums with no var
 When a storage variable is accessed, a `StorageHandler` is returned of the appropriate type. The handler contains the key required to access the underlying data:
 
 ```rust
-assert(storage.x.key = sha256("storage_0"));
-assert(storage.y.key = sha256("storage_1"));
-assert(storage.str.key = sha256("storage_2"));
-assert(storage.s.a.key = sha256("storage_3"));
-assert(storage.s.b.c.key = sha256("storage_3") + 1);
-assert(storage.s.b.d.key = sha256("storage_3") + 2);
+assert(storage.x.key == sha256("storage_0"));
+assert(storage.y.key == sha256("storage_1"));
+assert(storage.str.key == sha256("storage_2"));
+assert(storage.s.a.key == sha256("storage_3"));
+assert(storage.s.b.c.key == sha256("storage_3") + 1);
+assert(storage.s.b.d.key == sha256("storage_3") + 2);
 
-assert(storage.s.key = sha256("storage_3")); // Same as `storage.s.a.key`
-assert(storage.s.b.key = sha256("storage_3") + 1); // Same as `storage.s.b.c.key`
+assert(storage.s.key == sha256("storage_3")); // Same as `storage.s.a.key`
+assert(storage.s.b.key == sha256("storage_3") + 1); // Same as `storage.s.b.c.key`
 ```
 
 > **Note**: 
