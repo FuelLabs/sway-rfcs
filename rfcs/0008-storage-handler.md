@@ -16,42 +16,53 @@ This RFC introduces the concept of a `StorageKey` which describes a particular s
 The current approach for reading and writing storage slots/variables has multiple flaws, despite being quite ergonomic:
 
 1. There is currently no way to reason about the location of a particular storage variable, which makes passing "references" to storage variables impossible. One workaround is manipulating and reading storage slots manually via `std::storage::store` and `std::storage::get`, but this approach is quite unsafe. Alternatively, one could declare a `trait` in a library and implement it in a contract and have its methods access storage variables. Those methods are then used in the library to access storage indirectly. This does not solve the full problem and feels more like a workaround than a real solution.
-1. Dynamic storage types, such as `StorageMap` and `StorageVec`, currently require a "hacky" compiler intrinsic called `__get_storage_key` which is not very well defined and is hard to use. Introducing the concept of a `StorageKey` will helps us completely remove this intrinsic.
-1. The current implementation of dynamic storage types prevents th-em from being used as struct fields or as type parameters of other storage types (e.g. `StorageVec<StorageVec<u64>>`).
+1. Dynamic storage types, such as `StorageMap` and `StorageVec`, currently require a "hacky" compiler intrinsic called `__get_storage_key` which is not very well defined and is hard to use. Its implementation also requires that all methods using it are inlined, which is not something that can be guaranteed, even if `#[inline(always)]` is used. Introducing the concept of a `StorageKey` will help us completely remove this intrinsic.
+1. The current implementation of dynamic storage types prevents them from being used as struct fields or as type parameters of other storage types (e.g. `StorageVec<StorageVec<u64>>`).
 
 # Guide-level explanation
 
 [guide-level-explanation]: #guide-level-explanation
 
-A `StrorageKey` is a thin wrapper type, in the standard library, around a `b256` key that describes a storage slot:
+A `StrorageKey` is a thin wrapper type, in the standard library, around a `b256` key that describes a storage slot and a `u64` offset, in 64 bit words, from the beginning of that slot.
 
 ```rust
 pub struct StorageKey<T> {
     key: b256,
+    offset: u64,
 }
 ```
 
-The type `T` describes the type of the data stored at `key`. Since each storage slot is 64 bytes long, some types cannot fit in a single storage slot. In that case, the data is stored across multiple consecutive storage slots starting at `key`. More on this in [Storage Slot Assignment](#storage-slot-assignment).
+The type `T` describes the type of the data that the `StorageKey` points to. Since each storage slot is 64 bytes long, some types cannot fit in a single storage slot, particuarly if `offset` is non-zero. In that case, the data is stored across multiple consecutive storage slots starting at `key + offset`. More on this in [Storage Slot Assignment](#storage-slot-assignment).
 
-Reading and writing the data stored at `key` can be accomplished using the `read` and `write` methods below:
+> **Note** 
+> We use the `+` sign in `key + offset` throughout this document to refer to the location in storage that `StorageKey { key, offset}` points to. For example, if `key = 0x0...00` and `offset = 10`, then `key + offset` points to the second word in storage slot `0x0...02` because `offset` is in words and each storage slot contains 4 words.
+
+Reading and writing the data stored at `key + offset` can be accomplished using the `read`, `try_read`, and `write` methods below:
 
 ```rust
 impl<T> StorageKey<T> {
     #[storage(read)]
-    pub fn read(self) -> Option<T> {
-        std::storage::get(self.key)
+    pub fn read(self) -> T {
+        std::storage::read::<T>(self.key, self.offset).unwrap()
+    }
+
+    #[storage(read)]
+    pub fn try_read(self) -> Option<T> {
+        std::storage::read::<T>(self.key, self.offset)
     }
 
     #[storage(write)]
     pub fn write(self, other: T) {
-        std::storage::store(self.key, other);
+        std::storage::write(self.key, self.offset, value);
     }
 }
 ```
 
-Notice that `read` returns an `Option` because it is possible that a particular storage slot is not valid, i.e. has not been written before, in which case `None` is returned. If the type `T` spans multiple storage slots, then the method `read` returns `None` if at least one the storage slots that `T` spans is invalid.
+This assumes the existence of functions `std::storage::read` and `std::storage::write` that read and write the appropriate storage slots given a key and an offset and handle all the appropriate storage slot assignment and data conversion.
 
-With the `StorageKey` type available, this RFC proposes a redefinition of the meaning of the expression `storage.<var>.<field>...` to return a `StorageKey` "pointing" to the actual data instead of returning the data itself. The RFC also proposes removing the "reassignment" statement `storage.<var>.<field>.. = ..` from the language.
+Notice that `StorageKey::try_read` returns an `Option` because it is possible that a particular storage slot is not valid, i.e. has not been written before, in which case `None` is returned. If the type `T` spans multiple storage slots, then the method `StorageKey::try_read` returns `None` if at least one the storage slots that `T` spans is invalid. The method `StorageKey::read` is similar to `StorageKey::read` except that it unwraps the returned `Option` internally.
+
+With the `StorageKey` type available, this RFC proposes a redefinition of the meaning of the expression `storage.<var>.<field>...` to return a `StorageKey` "pointing" to the actual data instead of returning the data itself. The RFC also proposes removing the "reassignment" statement `storage.<var>.<field>.. = ..` from the language, at least temporarily.
 
 Below is an example showing the behavior of `StorageKey` and the new behavior of storage access expressions:
 
@@ -70,16 +81,16 @@ fn foo() {
     let x_key: StorageKey<u64> = storage.s.x;
     x_key.write(42);
    
-    // Call `write` and `read` directly on `storage.s.y`
+    // Call `write` and `try_read` directly on `storage.s.y`
     storage.s.y.write(ZERO_B256);
-    let y:Option<b256> = storage.s.y.read();
+    let y: Option<b256> = storage.s.y.try_read();
 
     // Get the storage key to the struct `s` and then use it to store `MyStruct { x: 42, y: ZERO_B256 }` in `s`.
     let s_key: StorageKey<MyStruct> = storage.s;
     s_key.write(MyStruct { x: 42, y: ZERO_B256 } );
 
     // Read the struct `s`
-    let s:Option<MyStruct> = s_key.read();
+    let s: MyStruct = s_key.read();
 }
 ```
 
@@ -112,7 +123,7 @@ impl TestContract for Contract {
     #[storage(read, write)]
     fn increment_counter(amount: u64) -> u64 {
         // Previously: `let incremented = storage.counter + amount`
-        let incremented = storage.counter.read().unwrap_or(0) + amount;
+        let incremented = storage.counter.read() + amount;
 
         // Previously: `storage.counter = incremented`
         storage.counter.write(incremented);
@@ -122,11 +133,14 @@ impl TestContract for Contract {
 }
 ```
 
+> **Note** 
+> Because storage variables defined in a `storage` block have to be initialized, it is generally often to call `StorageKey::read` to get back the data directly instead of having to handle the `Option` returned from `try_read`. This, of course, becomes unsafe if `asm` blocks that clear storage slots are used. Note that the standard library currently has a public method `clear` that we also propose that it should be made private to avoid potential foot guns.
+
 # Reference-level explanation
 
 [reference-level-explanation]: #reference-level-explanation
 
-The compiler will handle storage slots assignment for each storage variable. Each storage access expression will simply return a `StorageKey` containing the key chosen by the compiler.
+The compiler will handle storage slots assignment for each storage variable. Each storage access expression will simply return a `StorageKey` containing the key and the offset chosen by the compiler.
 
 ## Storage Slot Assignment
 
@@ -155,9 +169,7 @@ The "index" assigned to each variable is used to generated a key as follows.
 
 ### "Small" Types
 
-Small types are types that fit in a single storage slot. We exclude structs with multiple fields from this definition even they do fit in one slot; structs with at least one field are considered "large types" are handled in the [next section](#large-types).
-
-Storage variables that have small types are assigned a single key that is equal to `sha256("storage_<idx>")` where `<idx>` is the index assigned to the storage variable. In the example above, the key chosen for `x` is:
+Small types are types that fit in a single storage slot. Storage variables that have small types are packed and assigned a single key that is equal to `sha256("storage_<idx>")` where `<idx>` is the index assigned to the storage variable. In the example above, the key chosen for `x` is:
 
 ```rust
 sha256("storage_0") = 0xf383b0ce51358be57daa3b725fe44acdb2d880604e367199080b4379c41bb6ed
@@ -171,45 +183,36 @@ sha256("storage_1") = 0xde9090cb50e71c2588c773487d1da7066d0c719849a7e58dc8b6397a
 
 ### "Large" Types
 
-Large types span multiple storage slots and are laid out sequentially in storage starting at key `sha256("storage_<idx>")` where `<idx>` is the index assigned to each storage variable. The number of storage slots required can be computed as `(__size_of::<T>() + 31) >> 5` (ceiling of the size of the data type divided by `32`). Structs are the only exception to this rule because the fields of a struct are each stored in their own storage slot regardless of their size. This makes accessing or writing a particular struct field much more efficient.
-
-> **Note**
-> Struct variables are laid out in the same way today.
+Large types span multiple storage slots and are packed and laid out sequentially in storage starting at key `sha256("storage_<idx>")` where `<idx>` is the index assigned to each storage variable. The number of storage slots required can be computed as `(__size_of::<T>() + 31) >> 5` (ceiling of the size of the data type divided by `32`). 
 
 For example, the storage variable `str` above is a string containing `99` characters and its size is `99` bytes which span 2 storage slots. It is also assigned index `2`. Therefore, `str` spans slots with keys `sha256("storage_2")` and `sha256("storage_2") + 1`.
 
-Variable `s` on the other hand, is a nested struct and is assigned index `3`. Therefore, each of its fields (and subfields) is assigned a separate key starting with `sha256("storage_3")`:
+Variable `s` is a nested struct and is assigned index `3`. Therefore, its fields and subfields are stored as follows:
 
-- `s.a` is assigned `sha256("storage_3")`.
-- `s.b.c` is assigned `sha256("storage_3") + 1`.
-- `s.b.d` is assigned `sha256("storage_3") + 2`.
+- `s.a` is stored as the first word in storage slot with key `sha256("storage_3")`.
+- `s.b.c` is stored as the second word in storage slot with key `sha256("storage_3")` (same slot as `s.a`).
+- `s.b.d` is the third and fourth words in storage slot with key `sha256("storage_3")` as well as the first and second words in storage slot with key `sha256("storage_3") + 1`.
 
 ### Empty Types
 
-There are two possible empty types: structs with no fields and enums with no variants. Empty structs are useful for implementing dynamic storage types such as `StorageMap` and `StorageVec`. Storage variables that have empty types should not consume any storage slots.
+There are two possible empty types: structs with no fields and enums with no variants. Empty structs are useful for implementing dynamic storage types such as `StorageMap` and `StorageVec`. Storage variables that have empty types do not consume any storage slots.
 
 ### Behavior of `StorageKey`
 
-When a storage variable is accessed, a `StorageKey` is returned of the appropriate type. The `StorageKey` object contains the `b256` key required to access the underlying data:
+When a storage variable is accessed, a `StorageKey` is returned of the appropriate type. The `StorageKey` object contains the `b256` key and the `u64` offset required to access the underlying data:
 
-```rust
-assert(storage.x.key == sha256("storage_0"));
-assert(storage.y.key == sha256("storage_1"));
-assert(storage.str.key == sha256("storage_2"));
-assert(storage.s.a.key == sha256("storage_3"));
-assert(storage.s.b.c.key == sha256("storage_3") + 1);
-assert(storage.s.b.d.key == sha256("storage_3") + 2);
-
-assert(storage.s.key == sha256("storage_3")); // Same as `storage.s.a.key`
-assert(storage.s.b.key == sha256("storage_3") + 1); // Same as `storage.s.b.c.key`
-```
-
-> **Note**: 
-> The above is a pseudo-code and is not meant to compile for various reasons.
+- `storage.x` returns `StorageKey<b256> { key: sha256("storage_0"), offset: 0 }`.
+- `storage.y` returns `StorageKey<b256> { key: sha256("storage_1"), offset: 0 }`.
+- `storage.str` returns `StorageKey<str[99]> { key: sha256("storage_2"), offset: 0 }`.
+- `storage.s` returns `StorageKey<MyStruct> { key: sha256("storage_3"), offset: 0 }`.
+- `storage.s.a` returns `StorageKey<u64> { key: sha256("storage_3"), offset: 0 }`.
+- `storage.s.b` returns `StorageKey<MyInnerStruct> { key: sha256("storage_3"), offset: 1 }`.
+- `storage.s.b.c` returns `StorageKey<u64> { key: sha256("storage_3"), offset: 1 }`.
+- `storage.s.b.d` returns `StorageKey<b256> { key: sha256("storage_3"), offset: 2 }`.
 
 ## Implementation Detail
 
-The typed expression `TyStorageAccess` in the compiler should now return `std::storage::StorageKey` which should store the key chosen by the compiler according to the rules described in [Storage Slots Assignment](#storage-slot-assignment). The rest of the flow is be handled automatically after removing all the unnecessary logic in the compiler for reading and writing storage slots.
+The typed expression `TyStorageAccess` in the compiler should now return `std::storage::StorageKey` which should store the key and offset chosen by the compiler according to the rules described in [Storage Slots Assignment](#storage-slot-assignment). The rest of the flow will be handled automatically after removing all the unnecessary logic in the compiler for reading and writing storage slots.
 
 ## Implementing Dynamic Storage Types using `StorageKey`.
 
@@ -219,28 +222,28 @@ Dynamic storage types such `StorageMap` and `StorageVec` currently use the intri
 /// A persistent key-value pair mapping struct.
 pub struct StorageMap<K, V> {}
 
-impl<K, V> StorageMap<K, V> {
-    #[storage(write)]
-    pub fn insert(self: StorageKey<Self>, key: K, value: V) {
+impl<K, V> StorageKey<StorageMap<K, V>> {
+    #[storage(read, write)]
+    pub fn insert(self, key: K, value: V) {
         let key = sha256((key, self.key));
-        store::<V>(key, value);
+        write::<V>(key, 0, value);
     }
 
     #[storage(read)]
-    pub fn get(self: StorageKey<Self>, key: K) -> Option<V> {
-        let key = sha256((key, self.key));
-        get::<V>(key)
+    pub fn get(self, key: K) -> StorageKey<V> {
+        StorageKey {
+            key: sha256((key, self.key)),
+            offset: 0,
+        }
     }
 
     #[storage(write)]
-    pub fn remove(self: StorageKey<Self>, key: K) -> bool {
+    pub fn remove(self, key: K) -> bool {
         let key = sha256((key, self.key));
         clear::<V>(key)
     }
 }
 ```
-
-Note that this requires that the compiler allows `self` to be type-ascribed. This is not possible today but should be easy to do. We should make sure to restrict the types allowed to only `Self` and `StorageKey<Self>`. Rust has a small list of types that `self` is allowed to have such as `Rc` and `Arc` so this feature is not unheard of.
 
 With the above new implementation, we should be able to continue to use `StorageMap` as before:
 
@@ -250,9 +253,12 @@ storage {
 }
 
 storage.my_map.insert(0, 0);
-let x = storage.my_map.get(0);
+let x = storage.my_map.get(0).read();
 storage.my_map.remove(0);
 ```
+
+> **Note**
+> The method `get` now returns a `StorageKey` instead of the actual data because this simplifies nesting storage maps and other dynamic storage types. 
 
 A similar approach can be followed to re-implement `StorageVec` and other dynamic storage types.
 
@@ -274,7 +280,7 @@ storage {
 }
 
 storage.s.map1.insert(0, 0);
-let x = storage.s.map2.get(0);
+let x = storage.s.map2.get(0).read();
 ```
 
 It will also be possible to pass a `StorageMap` to a function by passing a `StorageKey` to it as follows:
@@ -293,7 +299,20 @@ fn bar() {
 }
 ```
 
-Sway code using storage maps and vectors will not look any different than before after this RFC is implemented.
+## Nested Dynamic Storage Types
+
+Nesting dynamic storage type is now trivial given what we have so far:
+
+```rust
+storage {
+    nested_map_1: StorageMap<u64, StorageMap<u64, StorageMap<u64, u64>>> = StorageMap {},
+}
+
+storage.nested_map_1.get(0).get(0).insert(0, 1);
+storage.nested_map_1.get(1).get(1).insert(1, 8);
+assert(storage.nested_map_1.get(0).get(0).get(0).read() == 1);
+assert(storage.nested_map_1.get(1).get(1).get(1).read() == 8);
+```
 
 # Drawbacks
 
@@ -301,9 +320,9 @@ Sway code using storage maps and vectors will not look any different than before
 
 There are two main drawbacks for the approach proposed above:
 
-1. Reading and writing a storage variable is now a bit more complicated and less ergonomic than before because we now have to call `read` and `write` manually. We also have to handle the `Option` returned by `read` which can be quite verbose. We should consider making this more ergonomic by introducing a simpler syntax that de-sugars to the API calls above. For example, we could de-sugar something like `storage.x = 42` to `storage.x.write(42)`. We could also consider making `read` return the data directly instead of an `Option` if we completely disallow storage slots corresponding to storage variables from being invalidated (For example, remove `std::storage::clear`).
+1. Reading and writing a storage variable is now a bit more complicated and less ergonomic than before because we now have to call `read` and `write` manually. We should consider making this more ergonomic by introducing a simpler syntax that de-sugars to the API calls above. For example, we could de-sugar something like `storage.x = 42` to `storage.x.write(42)`.
 
-2. The second drawback is related to the fact that structs take up more storage slots than they actually need. This behavior is **not** new. There is a tradeoff here to be considered. If we make structs tightly packed, then manipulating a single field becomes more expensive (potential read-modify-write patterns or fields "spilling" over to the next slot), but the number of storage slots required may become lower. We might want to consider a `#[packed]` attribute in the future to let the user decide on one way v.s. the other. Another thing to consider with tightly-packed structs is that the type `StorageKey` would then also require an additional field that points to a particular location _inside_ a given slot (i.e. which byte to start reading from or writing to).
+2. The second drawback is that, because sturcts are packed in storage, then we will often need to read a storage slot before writing to it because we may need to preserve parts of it if the value we're writing is smaller than the slot itself. This means that almost each storage write now also requires a storage read. This is the case in Solidity as well. The upside here is that a smaller number of storage slots will be needed overall.
 
 # Rationale and alternatives
 
@@ -325,14 +344,58 @@ In Rust, the closest thing to storage accesses is file I/O where a handler is us
 
 [unresolved-questions]: #unresolved-questions
 
-- How do we make storage accesses, particularly reads, more ergonomic?
-- Is not having structs tightly packed acceptable? Is that something that we want in the future, potentially via a `#[packed]` attribute that also reorders the fields of the struct for optimal layout?
-- How do we implement nested dynamic storage types such as `StorageVec<StorageVec<u64>>`?
-- How do we obtain a `StorageKey` for data stored in a dynamic storage collection such as `StorageMap` or `StorageVec`? Is that even needed/required?
+- How do we make storage accesses more ergonomic? Or at least as ergonomic as they currently are?
 
 # Future possibilities
 
 [future-possibilities]: #future-possibilities
 
-- Tightly packed storage structs.
-- Nested dynamic storage types such as `StorgaeVec<StorageVec<u64>>`.
+## Unpacked storage structs.
+
+Unpacking structs in storage could be useful in certain situations. The advantage of unpacking sturcts is that each field and subfield gets its own storage slot which often makes reading and writing those fields and subfields cheaper. We may want to consider an annotation in the future that requests that a given struct is unpacked in storage.
+
+## `Index` and `IndexAssign` traits
+
+We can introduce the traits `Index` and `IndexAssign` which would allow implementing `index()` and `index_assign()` for dynamic storage types such as `StorageMap` and `StorageVec` as follows:
+
+```rust
+impl Index for StorageHandle<StorageMap<K, V>>
+    fn index(self, key: K) -> StorageKey<V> {
+        StorageKey {
+            key: sha256((key, self.key)),
+            offset: 0,
+        }
+    }
+}
+
+impl IndexAssign for StorageHandle<StorageMap<K, V>>
+    #[storage(read, write)]
+    pub fn index_assign(self, key: K, value: V) {
+        let key = sha256((key, self.key));
+        write::<V>(key, 0, value);
+    }
+}
+```
+
+Note that this deviates from Rust which has `Index` and `IndexMut`, but `IndexMut` likely requires mutable references in the language which we don't have. However, there has been [attempts](https://github.com/rust-lang/rfcs/pull/1129) to introduce `IndexAssign` in Rust but without any success due to reasons that I don't think apply to Sway.
+
+With the above, the compiler can then de-sugar expressions like `a[i]` to `a.index(i)` and `a[i] = b` to `a.index_assign(i, b)`. For a nested `StorageMap`, the resulting user code would look like:
+
+```rust
+struct M {
+    u: b256,
+    v: u64,
+}
+
+storage {
+    nested_map_2: StorageMap<(u64, u64), StorageMap<str[4], StorageMap<u64, M>>> = StorageMap {},
+}
+
+let m1 = M {
+    u: 0x1111111111111111111111111111111111111111111111111111111111111111,
+    v: 1,
+};
+
+storage.nested_map_2[(1, 0)]["0000"][0] = m1;
+assert(storage.nested_map_2[(1, 0)]["0000"][0].read() == m1);
+```
