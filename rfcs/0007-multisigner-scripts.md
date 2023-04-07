@@ -23,7 +23,7 @@ The current script features allow programmers to execute multiple transactions a
 
 The "Tx" enum comes in two variants, "Signed" and "Unsigned". The Signed variant represents a Transaction which has already been signed, and the Unsigned variant represents an intent of a transaction, without actually being signed yet.
 
-A script including a Signed Tx may execute the signed tx once at any point in their script, creating their own contract calls before or after the external tx. This can be used to arbitrage price changes, provide just in time liquidity, or other sorts of MEV tactics.
+A script including a Signed Tx may execute the signed tx once at any point in their script, creating their own contract calls before and/or after the external tx. This can be used to arbitrage price changes, provide just in time liquidity, or other sorts of MEV tactics.
 
 A script including an Unsigned Tx may also execute the unsigned tx at any point in their script, however, before submitting the script to the blockchain, it must be sent to the third party so they can sign and fulfill their intent, or else the script will revert.
 
