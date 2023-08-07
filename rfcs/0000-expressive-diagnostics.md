@@ -231,11 +231,11 @@ To the proposed design, the approach and its alternatives were shortly discussed
 
 ## Alternative 1: Using generic diagnostic structure
 
-This approach would mean having a possibility do define an arbitrary diagnostic, similar to an arbitrary output that can be achieved by using `Snippet`, `Slice`, `Annotation`, and other abstractions provided by [annotate-snippets](https://crates.io/crates/annotate-snippets). We have concluded that this additional freedom would not give us any more expressive power, but just create additional confusion when defining diagnostics. It would also very likely lead toward inconsistencies similar to those we have now (different wording, different ways to explain an issue, etc.).
+This approach would mean having a possibility do define an arbitrary diagnostic, similar to an arbitrary output that can be achieved by using `Snippet`, `Slice`, `Annotation`, and other abstractions provided by [annotate-snippets](https://crates.io/crates/annotate-snippets/). We have concluded that this additional freedom would not give us any more expressive power, but just create additional confusion when defining diagnostics. It would also very likely lead toward inconsistencies similar to those we have now (different wording, different ways to explain an issue, etc.).
 
 ## Alternative 2: Evaluating and using `miette` crate
 
-[miette](https://crates.io/crates/miette) crate provides a holistic library for defining, reporting, and rendering diagnostics. We have concluded that using `miette` would mean changing our existing infrastructure that already works well plus losing the flexibility if we decide to do thing differently then envisioned by `miette`. The conclusion was to approach `miette` as an inspiration for our own API.
+[miette](https://crates.io/crates/miette/) crate provides a holistic library for defining, reporting, and rendering diagnostics. We have concluded that using `miette` would mean changing our existing infrastructure that already works well plus losing the flexibility if we decide to do thing differently then envisioned by `miette`. The conclusion was to approach `miette` as an inspiration for our own API.
 
 # Prior art
 
