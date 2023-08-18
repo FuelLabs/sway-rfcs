@@ -29,7 +29,7 @@ Generic type \"{name}\" is not in scope. Perhaps you meant to specify type param
     {fn_name}<{comma_separated_generic_params}>({args}) -> ... `
 ```
 
-The way how we structure those messages is, however, not standardized. E.g., here is an another attempt to provide a detailed error explanation, formated and conveyed in a completely different way:
+The way how we structure those messages is, however, not standardized. E.g., here is an another attempt to provide a detailed error explanation, formatted and conveyed in a completely different way:
 
 ```
 expected: {expected} \n\
@@ -38,7 +38,7 @@ expected: {expected} \n\
     match the one in the {interface_name} declaration.
 ```
 
-At the moment, although detailed and helpful, these messages are "packed" within a single piece of text pointing to a single place in code. This significantly limits amount of helpful information that can be provided to the programmer. It also limits the presentation of the context in which the diagnostic occurs. The overall context usually spans accross several points in code. We want to be able to place the useful information on the exact places in code that are relevant to the diagnostic.
+At the moment, although detailed and helpful, these messages are "packed" within a single piece of text pointing to a single place in code. This significantly limits amount of helpful information that can be provided to the programmer. It also limits the presentation of the context in which the diagnostic occurs. The overall context usually spans across several points in code. We want to be able to place the useful information on the exact places in code that are relevant to the diagnostic.
 
 Sway programmers are also confronted with short, sometimes cryptic error messages, containing jargon used by compiler developers. E.g.:
 
@@ -87,14 +87,14 @@ Programmer will have the option to open the full compiler diagnostic, getting th
 
 To ensure consistency and apply best practices<sup>[5]</sup> the diagnostics will follow these guidelines:
 
-- _Reason_ will be short and point out the language constraint which was violated. It will _not_ finish in fullstop, to emphasize brevity.
-- _Issue_ will be short and point out the specific situation encountered in code. It will also _not_ finish in fullstop, to emphasize brevity.
+- _Reason_ will be short and point out the language constraint which was violated. It will _not_ finish in full stop, to emphasize brevity.
+- _Issue_ will be short and point out the specific situation encountered in code. It will also _not_ finish in full stop, to emphasize brevity.
 - CLI or IDE plugin might choose to combine the _reason_ and the _issue_ as shown at the image above.
 - _Reason_ and _issue_ are given in plain english language, free of, e.g., compiler jargon.
 - _Hints_ and _help_ are as well written in plain english, using proper punctuation and grammar rules.
 - _Hints_ and _help_ try to give as much of useful context as possible and to be as specific as possible.
 - Identifier and type names in messages are enclosed in "double quotes".
-- Articles "the" and "a/an" are not used at the begining of a sentence. E.g., "Variable "X" shadows..." instead of "The variable "X" shadows...". They can be used in formulations like "This is the original declaration...".
+- Articles "the" and "a/an" are not used at the beginning of a sentence. E.g., "Variable "X" shadows..." instead of "The variable "X" shadows...". They can be used in formulations like "This is the original declaration...".
 
 Here is an example. The existing error message:
 
@@ -116,7 +116,7 @@ Help:   Items like structs, enums, traits, and ABIs must have a unique name in s
 
 ## Diagnostic codes
 
-A diagnostic _code_ uniquely identifiy a particular _reason_. Considering that we already have these diagnostic areas:
+A diagnostic _code_ uniquely identifies a particular _reason_. Considering that we already have these diagnostic areas:
 
 - Lexical analysis
 - Parsing
@@ -207,7 +207,7 @@ For _hints_, not being in source code means that they are not rendered at all. D
 For the _issue_, clients will always display it as a part of diagnostic description. If it is in code, clients can choose to additionally display it in code.
 E.g., `forc` always shows the _issue_ text as a part of the diagnostic description, but if the _issue_ is in code and there is a _hint_ pointing to the same place in code, the _issue_ will not be rendered as a _label_ in code. This overloading of the _issue_ text by a _hint_ is visible on the above example and is enforced via Diagnostics API. It gives us the flexibility to phrase the diagnostic description and the hints in an independent way, while allowing backward compatibility with the current warnings and errors that have only a single message and span.
 
-Using `Span::dummy()` to denote non-existance of an element is in line with the current usage of `Span::dummy()`. It also allows declarative definition of all the _hints_, knowing that some of them might not be shown, depending on the concrete `Span` value passed to the enum variant.
+Using `Span::dummy()` to denote non-existence of an element is in line with the current usage of `Span::dummy()`. It also allows declarative definition of all the _hints_, knowing that some of them might not be shown, depending on the concrete `Span` value passed to the enum variant.
 
 Our `Diagnostic` derive and `thiserror`'s `Error` derive would coexist as long as the "old-style" diagnostic do not get fully replaced with expressive diagnostic. The existing fallback mechanism would still be generated by the `Diagnostic` derive.
 
@@ -301,7 +301,7 @@ type int8_t = i8;
 
 [future-possibilities]: #future-possibilities
 
-Once we get online documentation for diagnostics (as proposed in [Sway 3512](https://github.com/FuelLabs/sway/issues/3512)) we can extend diagnostic messages with links to detailed explanantion by adding an element like:
+Once we get online documentation for diagnostics (as proposed in [Sway 3512](https://github.com/FuelLabs/sway/issues/3512)) we can extend diagnostic messages with links to detailed explanation by adding an element like:
 
 ```
 info: For more information see: https://.../E4001
@@ -313,7 +313,7 @@ Similar to Rust, we can also add the _explain_ command to `forc`. E.g.:
 forc explain E4001
 ```
 
-Once _The Sway Book_ and _The Sway Reference_ become stable we can also enhace `Diagnostic` by adding references to the documentation. E.g.:
+Once _The Sway Book_ and _The Sway Reference_ become stable we can also enhance `Diagnostic` by adding references to the documentation. E.g.:
 
 ```Rust
 #[error(
