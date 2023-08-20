@@ -81,12 +81,12 @@ Pointers can be obtained by using the `__addr_of` intrinsic and dereferenced usi
 ```sway
 let val = 1u64;
 let ptr: *mut u64 = __addr_of(val);
-let ptr_val = __deref(val);
+let ptr_val = __deref(ptr);
 assert_eq(val, ptr_val);
 
 let val = Box::new(1u64);
 let ptr: *mut Box<u64> = __addr_of(val);
-let ptr_val = __deref(val);
+let ptr_val = __deref(ptr);
 assert_eq(val, ptr_val);
 ```
 
