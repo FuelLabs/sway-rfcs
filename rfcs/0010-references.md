@@ -76,19 +76,26 @@ and produces the desired memory representation.
 There are cases where one may want to directly manipulate memory addresses with pointer arithmetic,
 to allow for this we have a pointer type that represents a single address: `*mut T` where T is the type being pointed to.
 
-Pointers can be obtained by using the `__addr_of` intrinsic and dereferenced using the `__deref` intrinsic, like so:
+Pointers can be obtained by using the `__addr_of` intrinsic on a reference and dereferenced using the `__deref` intrinsic, like so:
 
 ```sway
-let val = 1u64;
-let ptr: *mut u64 = __addr_of(val);
-let ptr_val = __deref(ptr);
+let val: u64 = 1;
+let ptr: *mut u64 = __addr_of(Box::new(val));
+let ptr_val: u64 = __deref(val);
 assert_eq(val, ptr_val);
 
-let val = Box::new(1u64);
-let ptr: *mut Box<u64> = __addr_of(val);
-let ptr_val = __deref(ptr);
+let val: Box<u64> = Box::new(1);
+let ptr: *mut Box<u64> = __addr_of(Box::new(val));
+let ptr_val: Box<u64> = __deref(val);
 assert_eq(val, ptr_val);
+
+let val: Box<u64> = Box::new(1);
+let ptr: *mut u64 = __addr_of(val);
+let ptr_val: u64 = __deref(val);
+assert_eq(val, Box::new(ptr_val));
 ```
+
+Dereferencing an invalid pointer is Undefined Behavior.
 
 ## Slices
 
@@ -309,6 +316,9 @@ check to make sure that `const` is only used with reference types.
 ## Pointers
 
 `*mut` should provide a fully typed alternative to `raw_ptr`.
+
+`__addr_of` will have to be altered to return a `*mut` and we'll need to
+introduce `__deref`.
 
 We will not check pointer mutability at this time, hence the `mut` in `*mut`,
 however we'll probably want to introduce `*const` once typed pointers are
