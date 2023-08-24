@@ -1,7 +1,7 @@
 - Feature Name: `references`
 - Start Date: 2023-08-17
 - RFC PR: [FuelLabs/sway-rfcs#28](https://github.com/FuelLabs/sway-rfcs/issues/28)
-- Sway Issue: [FueLabs/sway#0000](https://github.com/FuelLabs/sway/issues/001)
+- Sway Issue: [FueLabs/sway#5063](https://github.com/FuelLabs/sway/issues/5063)
 
 # Summary
 
@@ -14,11 +14,11 @@ eliminate redundant concepts.
 
 [motivation]: #motivation
 
-There currently exists a kludge of features on top of heap pointers that have
+There currently exists a kludge of features on top of pointers that have
 various levels of type correctness, offer various paradigms and have less than
 coherent syntax.
 
-We want to clarify the rules for passing heap data to and from functions, how
+We want to clarify the rules for passing dynamic data to and from functions, how
 they are expressed in the type system and through syntax, and eliminate untyped
 values such as `raw_ptr` and `raw_slice`.
 
@@ -27,7 +27,7 @@ values such as `raw_ptr` and `raw_slice`.
 [guide-level-explanation]: #guide-level-explanation
 
 Unlike Rust, Sway does not manage lifetimes. Due to the nature of smart contract
-execution, heap memory usage only grows and allocated memory is allocated for
+execution, dynamic memory usage only grows and allocated memory is allocated for
 the entire lifetime of the execution. In Rust terms, every reference value has a
 lifetime of `'static`.
 
@@ -37,16 +37,16 @@ In most cases, you shouldn't need to use explicit pointer types.
 
 ## Data types
 
-In Sway there are two types of data types. Primitives and References.
+In Sway there are two types of data types. Value types and Reference types.
 
-Primitives are allocated on the stack. They live for the lifetime of the
-function they are declared in. They are passed and returned by value, which
-means their value is directly copied. Primitives include `u8`, `u16`, `u32`,
-`u64`, tuples such as `()`, `(u8, u64)` and pointers such as `*mut u8`.
+Value types live for the lifetime of the function they are declared in. They are
+passed and returned by value, which means their value is directly copied. Value
+types include `u8`, `u16`, `u32`, `u64`, tuples such as `()`, `(u8, u64)` and
+pointers such as `*mut u8`.
 
-References are allocated on the heap and represented on the stack by a pointer
-to the heap. They are passed and returned by reference, which means the pointer
-is copied and still points to the same heap data.
+Reference types are represented by a pointer to a memory region and can have a
+dynamic size. They are passed and returned by reference, which means the pointer
+is copied and still points to the same data.
 
 There are two kinds of references. Slim and fat.
 
@@ -59,7 +59,7 @@ include slices, such as `[u8]`, `str`.
 
 ## Box
 
-It is sometimes desirable to have a reference to a primitive type, such as for
+It is sometimes desirable to have a reference to a value type, such as for
 passing a mutable reference to it to a function. This can be achieved with the
 `Box` struct, which is so defined:
 
@@ -81,17 +81,17 @@ Pointers can be obtained by using the `__addr_of` intrinsic on a reference and d
 ```sway
 let val: u64 = 1;
 let ptr: *mut u64 = __addr_of(Box::new(val));
-let ptr_val: u64 = __deref(val);
+let ptr_val: u64 = __deref(ptr);
 assert_eq(val, ptr_val);
 
 let val: Box<u64> = Box::new(1);
 let ptr: *mut Box<u64> = __addr_of(Box::new(val));
-let ptr_val: Box<u64> = __deref(val);
+let ptr_val: Box<u64> = __deref(ptr);
 assert_eq(val, ptr_val);
 
 let val: Box<u64> = Box::new(1);
 let ptr: *mut u64 = __addr_of(val);
-let ptr_val: u64 = __deref(val);
+let ptr_val: u64 = __deref(ptr);
 assert_eq(val, Box::new(ptr_val));
 ```
 
@@ -99,9 +99,9 @@ Dereferencing an invalid pointer is Undefined Behavior.
 
 ## Slices
 
-Slices represent contiguous areas of heap memory.
+Slices represent contiguous areas of dynamic memory.
 They can be used to represent dynamically sized data.
-Slices are represented on the stack by a pair containing a pointer to the heap memory and a length.
+Slices are represented on the by a pair containing a pointer to the data and a length.
 
 String slices, of type `str` represent a series of bytes encoding a valid UTF-8 string.
 This is the type returned by string literals.
@@ -153,7 +153,7 @@ assert_eq(elem, 3);
 When values are passed as arguments to a function they are either mutable or
 immutable which is denoted by the `mut` prefix in the argument type.
 
-Mutable primitive arguments can be reassigned.
+Mutable value type arguments can be reassigned.
 
 Mutable reference arguments can both be reassigned and have their fields
 assigned to.
@@ -215,7 +215,7 @@ pub fn main() {
 
 ```
 
-Using `const` on primitive types is not allowed:
+Using `const` on value types is not allowed:
 
 ```sway
 // this is illegal
@@ -259,20 +259,6 @@ named may need to use `Box<()>` or `*mut ()`, the former is preferred.
 # Reference-level explanation
 
 [reference-level-explanation]: #reference-level-explanation
-
-## Memory regions
-
-Previously the uses of "heap" and "stack" in documentation were implicit and mixed
-language concepts with target implementation details. With this RFC we want to
-clarify that stack and heap exist first as language abstractions in Sway that
-are then mapped to the local abstractions of each platform. A heapless target,
-for instance, will have to provide a way to implement dynamic memory to encode
-the language's heap abstraction.
-
-Using the language's stack or heap abstractions does not make any guarantees as
-to which type of memory will actually be used by the compiled contract, it is
-merely an abstract model and will be treated as a recommendation to the compiler
-which may be overruled by other considerations such as performance.
 
 ## Slices
 
@@ -367,7 +353,7 @@ them. It can even be misleading.
 Since we're leaning more towards ML, we may also have chosen to use `ref`
 instead of `Box` to denote reference types. However we already majorly borrow
 from Rust for our library abstractions, and a single field struct seems like the
-simplest way of generating a heap reference in Sway as it is.
+simplest way of generating a reference type in Sway as it is.
 
 The ambiguity as to the mutability of references or their content leads to a
 choice when picking function argument syntax. i.e.: we could have used  `val:
@@ -415,10 +401,8 @@ How dynamic types interact with the ABI will have to be resolved in a later RFC.
 
 [future-possibilities]: #future-possibilities
 
-We could introduce a marker trait to make the distrinction between primitives
-and references usable through the type system. However something that
-corresponds to different uses (such as an equivalent to `Copy`) may be more
-appropriate.
+We could introduce a marker trait (like `Copy`) to make the distinction between value types
+and references explicit through the type system. 
 
 As previously discussed, we may consider eventually making reference returns
 immutable by default, however this would have to go through multiple iterations
