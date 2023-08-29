@@ -62,7 +62,16 @@ Externally, we expect to see the effects experienced in other communities:
 
 [guide-level-explanation]: #guide-level-explanation
 
-When using `forc` via command line Sway programmers will get detailed diagnostics consisting of the following elements:
+Diagnostics will be displayed in different clients. E.g.:
+
+- `forc` CLI output.
+- VS Code hints.
+- VS Code compiler output.
+- VS Code Problems.
+
+Each client can choose which part of diagnostic to show and how.
+
+When using `forc` CLI Sway programmers will get detailed diagnostics consisting of the following elements:
 
 - _Level_: Error or Warning.
 - _Code_: Unique code of the diagnostic.
@@ -75,15 +84,21 @@ When using `forc` via command line Sway programmers will get detailed diagnostic
 
 When using IDEs like VS Code Sway programmers will have the experience similar to one offered by the [Rust analyzer](https://rust-analyzer.github.io/).
 
-Popup in the editor will provide the _reason_, _issue_, _hints_, as well as the _help_, similar to this Rust example:
+Popup in the editor could provide the _reason_, _issue_, _hints_, as well as the _help_, similar to this Rust example:
 
 ![oopsies image not showing](../files/0010-expressive-diagnostics-vscode-hints.png)
 
-Programmer will have the option to open the full compiler diagnostic, getting the same output like when using `forc` from the command line, similar to this Rust example:
+Programmer will have the option to open the full compiler diagnostic, getting the same output like when using `forc` CLI, similar to this Rust example:
 
 ![oopsies image not showing](../files/0010-expressive-diagnostics-vscode-full-diagnostic.png)
 
+Diagnostics will also be displayed in VS Code problems:
+
+![oopsies image not showing](../files/0010-expressive-diagnostics-vscode-problems.png)
+
 ## Wording guidelines
+
+When defining diagnostics, it is important to have in mind all the clients listed above. A diagnostic must not be optimized for one output, e.g., CLI but be hardly understandable in e.g., VS Code hints.
 
 To ensure consistency and apply best practices<sup>[5]</sup> the diagnostics will follow these guidelines:
 
