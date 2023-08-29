@@ -140,6 +140,24 @@ Diagnostic codes will be used to:
 - point to detailed diagnostic explanation similar to [Rust online help for error messages](https://doc.rust-lang.org/error_codes/error-index.html).
 - suppress warnings by using a Sway equivalent of Rust's [#[allow]](https://docs.rs/allow/latest/allow/).
 
+In case of warnings, in addition to the _code_ explained above, diagnostic will have a human-readable identifier which will allow us to have human-readable, self-documenting `#[allow]`s, similar to the [Clippy lint identifiers](https://rust-lang.github.io/rust-clippy/master/index.html#/Configuration).
+
+When [defining warnings via proc-macros](#reference-level-explanation), the human-readable identifier will be defined, next to the _code_:
+
+```Rust
+    ...
+    #[warning(
+        reason(1, name_is_not_idiomatic, "Name is not idiomatic"),
+    ...
+```
+
+This identifier can then be used in `#[allow]`s:
+
+```Rust
+#[allow(name_is_not_idiomatic)]
+type int8_t = i8;
+```
+
 In addition, we will add the option to Sway compiler to treat warnings as errors.
 
 # Reference-level explanation
@@ -293,22 +311,10 @@ Rust takes advantage of both possibilities by offering [online help for error me
 
 [unresolved-questions]: #unresolved-questions
 
-I expect to get feedback on the Diagnostic API, most importantly, if the suggested elements, _Code_, _Reason_, _Issue_, _Hints_, and _Help_ cover all of the cases we've encountered so far.
+The RFC has no unresolved questions. During the discussion, the following questions were resolved:
 
-One open question is the usage of symbolic codes like e.g. `non_camel_case_types` instead of, as proposed, e.g., `W0001`.
-This would allow us more readable `#[allow]` attributes. E.g.:
-
-```Rust
-#[allow(non_camel_case_types)]
-type int8_t = i8;
-```
-
-instead of:
-
-```Rust
-#[allow(W0001)] // Allow non camel case types.
-type int8_t = i8;
-```
+- the structure of the Diagnostic API.
+- the usage of symbolic warning identifiers like e.g., `name_is_not_idiomatic` in addition to warning codes like e.g., `W0001`.
 
 # Future possibilities
 
