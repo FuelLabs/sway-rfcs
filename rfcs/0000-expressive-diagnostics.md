@@ -75,10 +75,10 @@ When using `forc` CLI Sway programmers will get detailed diagnostics consisting 
 
 - _Level_: Error or Warning.
 - _Code_: Unique code of the diagnostic.
-- _Reason_: Short description of the diagnostic, not related to a specific issue that the programmer did. The _reason_ answers the question "Why is this an error or warning?" E.g., Because - "Constants cannot be shadowed". It points out the general language rule that was violated.
-- _Issue_: Short description of the concrete issue caused by the programmer. E.g., "Variable "X" shadows imported constant with the same name"
-- _Hints_: Detailed descriptions of the diagnostic. Hints are placed in the source code. They point to the problematic line of code but also to other places in code that can help to understand the issue.
-- _Help_: Additional friendly information, that helps understanding and solving the issue. Same as hints, help entries can be related to a place in code, or it can be placed in the footnotes.
+- _Reason_: Short description of the diagnostic, not related to a specific issue that the programmer did. The _reason_ answers the question "Why is this an error or warning?" E.g., Because - "Match pattern variable is already defined". It points out the general language rule that was violated.
+- _Issue_: Description of the concrete issue caused by the programmer, placed in the source code. E.g., "Variable "x" is already defined in this match arm."
+- _Hints_: Detailed descriptions of the diagnostic, placed in the source code. They point to other places in code that give additional contextual information about the issue.
+- _Help_: Additional friendly information, that helps better understanding and solving the issue. Same as hints, help entries can be related to a place in code, or they can be placed in the footnotes.
 
 ![oopsies image not showing](../files/0010-expressive-diagnostics-cli.png)
 
@@ -103,17 +103,16 @@ When defining diagnostics, it is important to have in mind all the clients liste
 To ensure consistency and apply best practices<sup>[5]</sup> the diagnostics will follow these guidelines:
 
 - _Reason_ will be short and point out the language constraint which was violated. It will _not_ finish in full stop, to emphasize brevity.
-- _Issue_ will be short and point out the specific situation encountered in code. It will also _not_ finish in full stop, to emphasize brevity.
-- CLI or IDE plugin might choose to combine the _reason_ and the _issue_ as shown at the image above.
+- _Issue_ will be short and point out the specific situation encountered in code. It is written in plain english, using proper punctuation and grammar rules.
 - _Reason_ and _issue_ are given in plain english language, free of, e.g., compiler jargon.
 - _Hints_ and _help_ are as well written in plain english, using proper punctuation and grammar rules.
 - _Hints_ and _help_ try to give as much of useful context as possible and to be as specific as possible.
 - _Help_ in footnotes should be used rarely, only for general explanations and suggestions. Preferably, _help_ should be related to a place in code.
-- Identifier and type names in messages are enclosed in "double quotes".
-- Code samples in messages are enclosed in \`grave accents\`.
-- Articles "the" and "a/an" are not used at the beginning of a sentence. E.g., "Variable "X" shadows..." instead of "The variable "X" shadows...". They can be used in formulations like "This is the original declaration...".
+- Identifier and type names in messages are enclosed in "double quotes". E.g., "x" or "(u32, bool)".
+- Code samples in messages are enclosed in \`grave accents\`. E.g., \`let x = 0\`.
+- Articles "the" and "a/an" are not used at the beginning of a sentence. E.g., "Variable "X" is already..." instead of "The variable "X" is already...". They can be used in formulations like "This is _the_ original declaration...".
 
-To avoid unnecessary complexity that comes through high number of diagnostic reasons (both for Sway developers and Sway programmers), we will introduce new error codes restrictively. Reusing existing error codes and reasons will be the preferable option. To communicate specific cases we will use _hints_ and _help_.
+To avoid unnecessary complexity that comes through high number of diagnostic reasons (both for Sway language developers and Sway programmers), we will introduce new error codes restrictively. Reusing existing error codes and reasons will be the preferable option. To communicate specific cases we will use _hints_ and _help_.
 
 Here is an example. The existing error message:
 
