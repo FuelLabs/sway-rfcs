@@ -370,13 +370,13 @@ info: For more information, see:
 
 [references]: #references
 
-- [1] [Expressive Diagnostics](https://clang.llvm.org/diagnostics.html)
-- [2] [Shape of errors to come](https://blog.rust-lang.org/2016/08/10/Shape-of-errors-to-come.html)
-- [3] [Compiler Errors for Humans](https://elm-lang.org/news/compiler-errors-for-humans)
-- [4] [Compilers as Assistants](https://elm-lang.org/news/compilers-as-assistants)
-- [5] [Concepts Error Messages for Humans](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2429r0.pdf)
-- [6] [Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research](https://web.eecs.umich.edu/~akamil/papers/iticse19.pdf)
-- [7] [Usability improvements in GCC 8](https://developers.redhat.com/blog/2018/03/15/gcc-8-usability-improvements#)
+- \[1\] [Expressive Diagnostics](https://clang.llvm.org/diagnostics.html)
+- \[2\] [Shape of errors to come](https://blog.rust-lang.org/2016/08/10/Shape-of-errors-to-come.html)
+- \[3\] [Compiler Errors for Humans](https://elm-lang.org/news/compiler-errors-for-humans)
+- \[4\] [Compilers as Assistants](https://elm-lang.org/news/compilers-as-assistants)
+- \[5\] [Concepts Error Messages for Humans](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2429r0.pdf)
+- \[6\] [Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research](https://web.eecs.umich.edu/~akamil/papers/iticse19.pdf)
+- \[7\] [Usability improvements in GCC 8](https://developers.redhat.com/blog/2018/03/15/gcc-8-usability-improvements#)
 
 [1]: https://clang.llvm.org/diagnostics.html "Expressive Diagnostics"
 [2]: https://blog.rust-lang.org/2016/08/10/Shape-of-errors-to-come.html "Shape of errors to come"
