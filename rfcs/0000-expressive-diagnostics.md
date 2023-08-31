@@ -13,13 +13,13 @@ Expressive diagnostics will provide detailed, helpful, and human friendly diagno
 
 [motivation]: #motivation
 
-There is an overwhelming evidence, based on experience<sup>[1],[2],[3],[4]</sup> and research<sup>[5],[6],[7]</sup>, that shows that the quality of compiler diagnostics has a significant influence on:
+There is an overwhelming evidence, based on experience<sup>[1],[2],[3],[4]</sup> and research<sup>[5],[6]</sup>, that shows that the quality of compiler diagnostics has a significant influence on:
 
 - the programmer's perception of the language
 - steepness of the language learning curve
 - and programmer's productivity.
 
-Experience from several communities, like Rust<sup>[2]</sup>, Elm<sup>[3]</sup>, and C++<sup>[1],[5],[8]</sup>, to name a few, has shown that improving diagnostics had a great impact on the three points listed above.
+Experience from several communities, like Rust<sup>[2]</sup>, Elm<sup>[3]</sup>, and C++<sup>[1],[5],[7]</sup>, to name a few, has shown that improving diagnostics had a great impact on the three points listed above.
 
 At the moment, Sway diagnostics vary significantly in level of details, wording, and helpfulness. We have messages that strive to be helpful and give hints to the programmer. E.g.:
 
@@ -290,13 +290,13 @@ This approach would mean having a possibility do define an arbitrary diagnostic,
 Expressive diagnostics are gaining relevance, or are already significant part of compilers like:
 
 - Rust<sup>[2]</sup>
-- GCC<sup>[5], [8]</sup>
+- GCC<sup>[5], [7]</sup>
 - Clang<sup>[1]</sup>
 - Elm<sup>[3]</sup>
 
 Microsoft puts an effort in improving diagnostics in their VC++ compiler<sup>[5]</sup>.
 
-Java error messages, traditionally knowing to be terse and difficult for novices and students, are enhanced with tools like Decaf, or Expresso<sup>[7]</sup>.
+Java error messages, traditionally knowing to be terse and difficult for novices and students, are enhanced with tools like Decaf, or Expresso.
 
 ## Using macros for diagnostic definition
 
@@ -376,8 +376,7 @@ info: For more information, see:
 - [4] [Compilers as Assistants](https://elm-lang.org/news/compilers-as-assistants)
 - [5] [Concepts Error Messages for Humans](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2429r0.pdf)
 - [6] [Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research](https://web.eecs.umich.edu/~akamil/papers/iticse19.pdf)
-- [7] [An Effective Approach to Enhancing Compiler Error Messages](https://dl.acm.org/doi/pdf/10.1145/2839509.2844584)
-- [8] [Usability improvements in GCC 8](https://developers.redhat.com/blog/2018/03/15/gcc-8-usability-improvements#)
+- [7] [Usability improvements in GCC 8](https://developers.redhat.com/blog/2018/03/15/gcc-8-usability-improvements#)
 
 [1]: https://clang.llvm.org/diagnostics.html "Expressive Diagnostics"
 [2]: https://blog.rust-lang.org/2016/08/10/Shape-of-errors-to-come.html "Shape of errors to come"
@@ -385,5 +384,4 @@ info: For more information, see:
 [4]: https://elm-lang.org/news/compilers-as-assistants "Compilers as Assistants"
 [5]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2429r0.pdf "Concepts Error Messages for Humans"
 [6]: https://web.eecs.umich.edu/~akamil/papers/iticse19.pdf "Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research"
-[7]: https://dl.acm.org/doi/pdf/10.1145/2839509.2844584 "An Effective Approach to Enhancing Compiler Error Messages"
-[8]: https://developers.redhat.com/blog/2018/03/15/gcc-8-usability-improvements "Usability improvements in GCC 8"
+[7]: https://developers.redhat.com/blog/2018/03/15/gcc-8-usability-improvements "Usability improvements in GCC 8"
