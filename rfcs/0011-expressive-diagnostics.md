@@ -1,7 +1,7 @@
 - Feature Name: `expressive_diagnostics`
 - Start Date: 2023-08-07
-- RFC PR: [FuelLabs/sway-rfcs#0000](https://github.com/FuelLabs/sway-rfcs/pull/001)
-- Sway Issue: [FueLabs/sway#0000](https://github.com/FuelLabs/sway/issues/001)
+- RFC PR: [FuelLabs/sway-rfcs#30](https://github.com/FuelLabs/sway-rfcs/pull/30)
+- Sway Issue: [FueLabs/sway#5079](https://github.com/FuelLabs/sway/issues/5079)
 
 # Summary
 
@@ -80,21 +80,21 @@ When using `forc` CLI Sway programmers will get detailed diagnostics consisting 
 - _Hints_: Detailed descriptions of the diagnostic, placed in the source code. They point to other places in code that give additional contextual information about the issue.
 - _Help_: Additional friendly information, that helps better understanding and solving the issue. Same as hints, help entries can be related to a place in code, or they can be placed in the footnotes.
 
-![oopsies image not showing](../files/0010-expressive-diagnostics-cli.png)
+![oopsies image not showing](../files/0011-expressive-diagnostics-cli.png)
 
 When using IDEs like VS Code Sway programmers will have the experience similar to one offered by the [Rust analyzer](https://rust-analyzer.github.io/).
 
 Popup in the editor could provide the _reason_, _issue_, _hints_, as well as the _help_, similar to this Rust example:
 
-![oopsies image not showing](../files/0010-expressive-diagnostics-vscode-hints.png)
+![oopsies image not showing](../files/0011-expressive-diagnostics-vscode-hints.png)
 
 Programmer will have the option to open the full compiler diagnostic, getting the same output like when using `forc` CLI, similar to this Rust example:
 
-![oopsies image not showing](../files/0010-expressive-diagnostics-vscode-full-diagnostic.png)
+![oopsies image not showing](../files/0011-expressive-diagnostics-vscode-full-diagnostic.png)
 
 Diagnostics will also be displayed in VS Code problems:
 
-![oopsies image not showing](../files/0010-expressive-diagnostics-vscode-problems.png)
+![oopsies image not showing](../files/0011-expressive-diagnostics-vscode-problems.png)
 
 ## Wording guidelines
 

@@ -2,10 +2,11 @@
 
 ## Active RFCs
 
-| RFC                                                                                            |     Title          |
-| ---------------------------------------------------------------------------------------------- | ------------------ |
-| [0004](https://github.com/FuelLabs/sway-rfcs/blob/master/rfcs/0004-declaration-engine.md)      | Declaration Engine |
-| [0005](https://github.com/FuelLabs/sway-rfcs/blob/master/rfcs/0005-collection-context.md)      | Collection Context |
+| RFC                                                                                            |     Title              |
+| ---------------------------------------------------------------------------------------------- | ---------------------- |
+| [0004](https://github.com/FuelLabs/sway-rfcs/blob/master/rfcs/0004-declaration-engine.md)      | Declaration Engine     |
+| [0005](https://github.com/FuelLabs/sway-rfcs/blob/master/rfcs/0005-collection-context.md)      | Collection Context     |
+| [0011](https://github.com/FuelLabs/sway-rfcs/blob/master/rfcs/0011-expressive-diagnostics.md)  | Expressive Diagnostics |
 
 ## Complete RFCs
 
