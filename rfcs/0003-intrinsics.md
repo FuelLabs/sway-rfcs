@@ -109,7 +109,7 @@ many programming languages. While [GCC](https://gcc.gnu.org/onlinedocs/gcc-4.9.2
 intrinsics, hardware vendors also provide their own set of intrinsics
 to enable programmers to take advantage of special instructions
 that the compiler does not directly / efficiently support. See
-Intel's [AVX intrinsics](https://www.intel.com/content/www/us/en/develop/documentation/cpp-compiler-developer-guide-and-reference/top/compiler-reference/intrinsics/intrinsics-for-intel-advanced-vector-extensions/details-of-avx-intrinsics.html), for example.
+Intel's [AVX intrinsics](https://www.intel.com/content/www/us/en/docs/cpp-compiler/developer-guide-reference/2021-8/details-of-avx-intrinsics.html), for example.
 
 To summarize, the idea is old and useful, and something that we can implement, without much surprises `¯\_(ツ)_/¯`. 
 

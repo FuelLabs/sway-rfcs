@@ -383,5 +383,5 @@ info: For more information, see:
 [3]: https://elm-lang.org/news/compiler-errors-for-humans "Compiler Errors for Humans"
 [4]: https://elm-lang.org/news/compilers-as-assistants "Compilers as Assistants"
 [5]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2429r0.pdf "Concepts Error Messages for Humans"
-[6]: https://web.eecs.umich.edu/~akamil/papers/iticse19.pdf "Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research"
+[6]: http://amirkamil.com/papers/iticse19.pdf "Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research"
 [7]: https://developers.redhat.com/blog/2018/03/15/gcc-8-usability-improvements "Usability improvements in GCC 8"
