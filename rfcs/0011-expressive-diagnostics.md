@@ -375,7 +375,7 @@ info: For more information, see:
 - \[3\] [Compiler Errors for Humans](https://elm-lang.org/news/compiler-errors-for-humans)
 - \[4\] [Compilers as Assistants](https://elm-lang.org/news/compilers-as-assistants)
 - \[5\] [Concepts Error Messages for Humans](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2429r0.pdf)
-- \[6\] [Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research](https://web.eecs.umich.edu/~akamil/papers/iticse19.pdf)
+- \[6\] [Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research](http://amirkamil.com/papers/iticse19.pdf)
 - \[7\] [Usability improvements in GCC 8](https://developers.redhat.com/blog/2018/03/15/gcc-8-usability-improvements#)
 
 [1]: https://clang.llvm.org/diagnostics.html "Expressive Diagnostics"
