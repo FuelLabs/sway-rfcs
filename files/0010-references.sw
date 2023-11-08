@@ -287,7 +287,7 @@ fn fn_takes_references(a: A, mut m_a: A, r_a: &A, r_m_a: &mut A, mut m_r_m_a: &m
     a.x = 1; // ERROR: `a` is not mutable.
     m_a.x = 1; // OK. The change does not affect the original (passed) value.
     
-    r_a.x = 1; // ERROR: `r_a` is a reference to a non muttable `A`.
+    r_a.x = 1; // ERROR: `r_a` is a reference to a non mutable `A`.
     r_m_a.x = 1; // OK. Changes the original (passed) value.
     m_r_m_a.x = 1; // OK. Changes the original (passed) value.
 
