@@ -239,7 +239,7 @@ fn references_and_pattern_matching() {
 /// using the reference to a semantically non-existing value.
 ///
 /// The question if something can be done on the language level to avoid dangling references
-/// is out of scope od References RFC.
+/// is out of scope of the References RFC.
 struct C {
     a: A,
     t: (u64, u64)
