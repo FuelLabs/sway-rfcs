@@ -99,7 +99,8 @@ fn arrays() {
 
 /// # Embedding references in aggregates
 /// A reference can be a part of an aggregate.
-/// E.g., we can have an array of references.
+/// E.g., we can have an array of references, or a struct field that is a reference.
+/// In the following examples, references to the struct `A` get embedded in aggregates.
 struct A {
     x: u64,
 }
@@ -134,7 +135,8 @@ fn embedding_in_aggregates() {
 
     m_b.r_m_a.x = 1; // OK: `r_m_a` references a mutable value.
 
-    // Same with arrays, tuples, and enums.
+    // Same is with arrays, tuples, and enums.
+    let a = [&m_a_1, &m_a_2];
 }
 
 
@@ -510,7 +512,7 @@ fn equality_of_references() {
     let r_b = &(1 + 1);
 
     assert(r_a == r_b);       // Comparing referenced values.
-    assert(!__eg(r_a, r_b));  // Comparing memory locations.
+    assert(!__eq(r_a, r_b));  // Comparing memory locations.
 
     let r_s_a = S { x: 0 };
     let r_s_b = S { x: 0 };
