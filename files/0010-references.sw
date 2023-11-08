@@ -280,7 +280,7 @@ fn referencing_parts_of_aggregates() {
 
 // Ideally, we want to have escape analysis so that in the case of the function below, we can
 // generate a warning for the first argument saying:
-// Copying immutable compound types is expensive and in this case not necessarry. Use `a: &A` instead. 
+// Copying immutable compound types is expensive and in this case not necessary. Use `a: &A` instead. 
 fn fn_takes_references(a: A, mut m_a: A, r_a: &A, r_m_a: &mut A, mut m_r_m_a: &mut A) {
     let x = a.x + m_a.x + r_a.x + m_r_a.x + m_m_r_a.x;
 
