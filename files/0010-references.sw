@@ -22,6 +22,8 @@
 /// 2. & operator defines the reference. * operator is dereferencing.
 ///
 /// 3. . and [] operators also dereference if the reference is a reference to a struct/tuple or array, respectively.
+///
+/// 4. `&mut T` coerces into `&T`.
 
 fn built_in_types_and_enums() {
     let i = 0u64;
@@ -50,6 +52,10 @@ fn built_in_types_and_enums() {
 
     *r_m_i = 1; // OK: Changes `m_i`.
     r_m_i = &x; // OK: `r_m_i` is mutable.
+    // ----
+
+    // ---- Coersion of `&mut T` into `&T` ----
+    r_i = r_m_i;
     // ----
 
     // Accessing built-in types and enums over reference via dereferencing operator (*).
@@ -331,6 +337,14 @@ fn passing_references_to_functions() {
     fn_takes_references(a, a, &a, &mut m_a, &mut m_a); // OK.
     fn_takes_references(m_a, m_a, &m_a, &mut m_a, &mut m_a); // OK.
     fn_takes_references(a, a, &a, &mut a /* ERROR */, &mut a /* ERROR */); // ERROR.
+
+    let r_a = &a;
+    let r_m_a = &mut m_a;
+    let mut m_r_a = &a;
+    let mut m_r_m_a = &mut m_a;
+
+    // `&mut T` coerce to `&T`.
+    fn_takes_references(a, a, r_m_a /* Coercion. */, r_m_a, r_m_a); // OK.
 }
 
 fn returning_references_from_functions() {
@@ -358,7 +372,6 @@ fn returning_references_from_functions() {
 /// Rust `iter()`, `iter_mut()`, and `into_iter()`. By semantic equivalents we mean
 /// - having references in Sway where borrowed value would be in Rust
 /// - having values where consuming the collection would be done in Rust.
-
 fn references_and_iterators() {
     let i_a = [1, 2, 3];
 
@@ -456,7 +469,11 @@ fn passing_and_returning_ref_type_aliases(x: RefToTupleOfRefs) -> RefToU64 {
 
 
 /// # `self` keyword
-/// Self is always a reference, to a mutable or immutable self, and must be marked as such.
+/// `self` is always a reference, to a mutable or immutable self, and must be marked as such.
+/// That means, in case of built-in types, to access the value, the dereferencing (*) will
+/// must be used.
+/// `Self` behaves like a regular type and complies to all the rules listed in the
+///  chapter "Passing and returning references from functions".
 struct S {
     x: u64,
 }
@@ -468,6 +485,22 @@ impl S {
     fn mutable_access_error(mut self) { } // ERROR: `&` is mandatory.
     fn self_is_immutable_ref_01(mut &self) {} // ERROR: `self` is always an immutable reference.
     fn self_is_immutable_ref_02(mut &mut self) {} // ERROR: `self` is always an immutable reference.
+}
+
+impl Add for u64 {
+    fn add(&self, other: Self) -> Self { // `other` is passed by-value.
+        __add(*self, other) // `self` must be dereferenced to get the value.
+    }
+}
+
+impl MyInc for u64 {
+    fn inc_me_for_one(&mut self) {
+        *self = *self + 1;
+    }
+
+    fn inc_me_for_other(&mut self, other: &Self) {
+        *self = *self + *other;
+    }
 }
 
 
@@ -541,4 +574,93 @@ fn references_and_pointers() {
 
     let r_r_s = &r_s;
     let p_r_r_s = __addr_of(r_r_s); // Returns the memory location at which `r_s` is stored.
+}
+
+
+/// # References and ASM blocks
+/// References can be returned from ASM blocks.
+/// Internally, same as pointers, they are just `u64` values.
+pub fn alloc_and_return_reference<T>() -> &T {
+    asm(size: __size_of::<T>(), ref_t) {
+        aloc size;
+        move ref_t hp;
+        ref_t: &T // Return reference to immutable T.
+    }
+}
+
+
+pub fn alloc_and_return_reference_to_mutable<T>() -> &mut T {
+    asm(size: __size_of::<T>(), ref_t) {
+        aloc size;
+        move ref_t hp;
+        ref_t: &mut T // Return reference to mutable T.
+    }
+}
+
+
+/// # References and impls
+/// Since references are types, it is possible to write `impl`s for them,
+/// including implementing traits.
+/// `&T` and `&mut T` are different types, but they coerce.
+/// Methods declared on `&T` are available on values of type `&mut T`.
+/// OPEN QUESTION:
+/// Should it also be possible to declare associated functions?
+/// It makes sense for the sake of completeness, but leads to changes in the
+/// call paths (see example below).
+/// Since supporting `impl`s on reference types has low priority, there is no
+/// need to answer this question at this point.
+impl &T { // A reference to an immutable T.
+    pub fn deref(&self) -> T {
+        **self // `self` is a reference to a reference. That's why double dereferencing to get the value.
+    }
+
+    pub fn redirect_me(&mut self, other: &T) {
+        *self = other;
+    }
+
+    pub fn change_the_referenced(&self, new_value: T) {
+        // `self` is a reference to a reference. That's why double dereferencing to get the value.
+        **self = new_value; // ERROR: `self` is a reference to an immutable T.
+    }
+
+    // OPEN QUESTION: Should it also be possible to declare associated functions?
+    pub fn associated_function(_t: T) { }
+}
+
+impl &mut T { // A reference to a mutable T.
+    pub fn change_the_referenced(&self, new_value: T) {
+        **self = new_value; // `self` is a reference to a reference. That's why double dereferencing to get the value.
+    }
+}
+
+impl &u64 {
+    pub fn change_me_to_123(&mut self) {
+        *self = 123;
+    }
+}
+
+fn references_and_impls() {
+    let a = 0u64;
+
+    assert((&a).deref() == a);
+
+    let r_a = &a;
+    r_a.redirect_me(&0); // ERROR: `r_a` is not mutable.
+
+    let mut m_r_a = &a;
+    mut_r_a.redirect_me(&0); // OK: `m_r_a` is mutable.
+
+    // OPEN QUESTION:
+    // If we allow associated functions, because of the lowest priority of the operator `&`
+    // and to make clear that we are specifying the type, and not dereferencing the result of
+    // the final function call, we should have something like this in the call path.
+    (&u64)::associated_function(0u64);
+
+    let mut b = 0u64;
+    let r_m_b = &mut b;
+
+    assert(r_m_b.deref() == b); // OK. Coersion of `&mut u64` to `&u64`.
+
+    r_m_b.change_the_referenced(123u64);
+    assert(b == 123);
 }
