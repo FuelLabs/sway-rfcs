@@ -603,12 +603,9 @@ pub fn alloc_and_return_reference_to_mutable<T>() -> &mut T {
 /// including implementing traits.
 /// `&T` and `&mut T` are different types, but they coerce.
 /// Methods declared on `&T` are available on values of type `&mut T`.
-/// OPEN QUESTION:
-/// Should it also be possible to declare associated functions?
-/// It makes sense for the sake of completeness, but leads to changes in the
-/// call paths (see example below).
-/// Since supporting `impl`s on reference types has low priority, there is no
-/// need to answer this question at this point.
+/// As with other impls on types, we can also declare associated functions.
+/// As with other impls on types that are not `Ty::Path` types, the only way
+/// to call associated functions is via type alias.
 impl &T { // A reference to an immutable T.
     pub fn deref(&self) -> T {
         **self // `self` is a reference to a reference. That's why double dereferencing to get the value.
@@ -623,7 +620,7 @@ impl &T { // A reference to an immutable T.
         **self = new_value; // ERROR: `self` is a reference to an immutable T.
     }
 
-    // OPEN QUESTION: Should it also be possible to declare associated functions?
+    // It is also possible to declare associated functions.
     pub fn associated_function(_t: T) { }
 }
 
@@ -639,6 +636,8 @@ impl &u64 {
     }
 }
 
+type RefToU64 = &u64;
+
 fn references_and_impls() {
     let a = 0u64;
 
@@ -650,11 +649,16 @@ fn references_and_impls() {
     let mut m_r_a = &a;
     mut_r_a.redirect_me(&0); // OK: `m_r_a` is mutable.
 
-    // OPEN QUESTION:
-    // If we allow associated functions, because of the lowest priority of the operator `&`
-    // and to make clear that we are specifying the type, and not dereferencing the result of
-    // the final function call, we should have something like this in the call path.
-    (&u64)::associated_function(0u64);
+    // Associated function can be called via type alias.
+    RefToU64::associated_function(0u64);
+
+    // General remark aside of references:
+    // We can think of extend the syntax to allow calling associated functions declared on types
+    // that are not `Ty:Path` types.
+    // E.g, in the above example something like:
+    //   (&u64)::associated_function(0u64); // Parentheses would be necessary to disambiguate declaration of a reference to the function call result.
+    // In case of other non-path types, an example could be an array:
+    //   [u64;5]::associated_function(0u64);
 
     let mut b = 0u64;
     let r_m_b = &mut b;
