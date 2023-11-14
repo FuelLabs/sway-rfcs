@@ -311,11 +311,11 @@ fn fn_takes_references(a: A, mut m_a: A, r_a: &A, r_m_a: &mut A, mut m_r_m_a: &m
     m_r_m_a = &new_m_a; // ERROR: If redirected, `m_r_m_a` must be still a reference to a mutable value.
 }
 
-fn fn_returns_ref() &A { // Reference to immutable A.
+fn fn_returns_ref() -> &A { // Reference to immutable A.
     &A { x: 0 } // Returning references to local values is allowed.
 }
 
-fn fn_returns_ref_to_mut() &mut A { // Reference to mutable A.
+fn fn_returns_ref_to_mut() -> &mut A { // Reference to mutable A.
     let mut m_a: A { x: 0 };
     let i_a: A { x: 0 };
 
