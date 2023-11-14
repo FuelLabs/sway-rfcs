@@ -636,6 +636,12 @@ impl &u64 {
     }
 }
 
+impl MyTrait for &u64 {
+    fn my_method(&self) {
+        // ...
+    }
+}
+
 type RefToU64 = &u64;
 
 fn references_and_impls() {
