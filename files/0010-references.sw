@@ -14,7 +14,7 @@
 ///
 ///    The need to specify `mut` in the second case is likely cumbersome because it will be
 ///    the default wanted behavior, but it gives us clear syntax later on when having references
-///    in aggreagates and when sending and returning them from functions.
+///    in aggregates and when sending and returning them from functions.
 ///
 ///    let i = 0u64;
 ///    let r_m_i = &mut i; // ERROR: `i` is not mutable.
