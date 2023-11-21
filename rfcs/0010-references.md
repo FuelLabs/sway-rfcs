@@ -114,7 +114,7 @@ Here, we are listing the major properties of references:
 - References can be parts of aggregates.
 - References can reference other references.
 - References can be used in pattern matching and deconstructing.
-- References can reference to parts od aggregates. E.g., having a reference to an array element.
+- References can reference parts of aggregates. E.g., having a reference to an array element.
 - References can be passed to and returned from functions.
 - References will play well with iterators and the `for` loop, once implemented.
 - References can be used together with generics.
