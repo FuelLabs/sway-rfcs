@@ -60,7 +60,7 @@ include slices, such as `[u8]`, `str`.
 
 ## References
 
-References mentioned above are internal compiler construct, but from the programmer's
+References mentioned above are an internal compiler construct, but from the programmer's
 perspective still regular value types, copied in assignments, and passed and returned by value.
 
 From the programmer's perspective, it is sometimes desirable to have a reference to a value type,
