@@ -4,7 +4,7 @@
 /// 1. References have their own mutability and can point to mutable or immutable values.
 ///    Thus, we support mutable references to mutable values and any combination of the two.
 ///    Target mutability is not automatically taken over from the referenced value, and
-///    must be specified explicitely. E.g.:
+///    must be specified explicitly. E.g.:
 ///
 ///    let mut m_i = 0u64;
 ///    let r_m_i = &mut m_i; // Immutable reference to a mutable `m_i`.
