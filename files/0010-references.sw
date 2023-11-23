@@ -674,3 +674,27 @@ fn references_and_impls() {
     r_m_b.change_the_referenced(123u64);
     assert(b == 123);
 }
+
+
+/// # References in contract call parameters
+/// References can occure in contract call parameters
+/// (`gas`, `asset_id`, `coins`) but must be dereferenced
+/// when assigned to parameters.
+fn references_in_contract_call_parameters() {
+    let contract = abi(MyConstract, CONTRACT_ID);
+
+    let r_n = &5000;
+    let r_asset_id = &ASSET_ID;
+
+    contract.some_function {
+        gas: r_n, // ERROR.
+        asset_id: r_asset_id, // ERROR.
+        coins: r_n // ERROR.
+    }();
+
+    contract.some_function {
+        gas: *r_n, // OK.
+        asset_id: *r_asset_id, // OK.
+        coins: *r_n // OK.
+    }();
+}
