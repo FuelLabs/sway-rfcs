@@ -578,8 +578,35 @@ fn references_and_pointers() {
 
 
 /// # References and ASM blocks
+/// Internally, same as pointers, references are just `u64` values that are interpreted
+/// as a memory address.
+///
+/// References can be passed as arguments to ASM blocks.
+/// The input register will in this case contain the address to the referenced value.
+///
 /// References can be returned from ASM blocks.
-/// Internally, same as pointers, they are just `u64` values.
+/// In this case, the content of the returned register is interpreted as an address
+/// and casted to a reference.
+
+// E.g., ASM block getting references as input.
+pub fn replace<T>(dest: &mut T, src: &T) {
+    if __addr_of(dest) == __addr_of(src) {
+        return;
+    }
+
+    let count = if __is_reference_type::<T>() {
+        __size_of_val(src)
+    } else {
+        __size_of::<T>()
+    };
+
+    // `dest` and `src` references in the input are addresses to the
+    // referenced values.
+    asm(dest: dest, src: src, count: count) {
+        mcp dst src count;
+    };
+}
+
 pub fn alloc_and_return_reference<T>() -> &T {
     asm(size: __size_of::<T>(), ref_t) {
         aloc size;
@@ -587,7 +614,6 @@ pub fn alloc_and_return_reference<T>() -> &T {
         ref_t: &T // Return reference to immutable T.
     }
 }
-
 
 pub fn alloc_and_return_reference_to_mutable<T>() -> &mut T {
     asm(size: __size_of::<T>(), ref_t) {
