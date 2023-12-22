@@ -577,9 +577,9 @@ fn references_and_pointers() {
 }
 
 
-/// # References and ASM blocks
+/// # References in ASM blocks
 /// Internally, same as pointers, references are just `u64` values that are interpreted
-/// as a memory address.
+/// as a memory addresses.
 ///
 /// References can be passed as arguments to ASM blocks.
 /// The input register will in this case contain the address to the referenced value.
@@ -632,7 +632,7 @@ pub fn alloc_and_return_reference_to_mutable<T>() -> &mut T {
 /// As with other impls on types, we can also declare associated functions.
 /// As with other impls on types that are not `Ty::Path` types, the only way
 /// to call associated functions is via type alias.
-impl &T { // A reference to an immutable T.
+impl<T> &T { // A reference to an immutable T.
     pub fn deref(&self) -> T {
         **self // `self` is a reference to a reference. That's why double dereferencing to get the value.
     }
@@ -650,7 +650,7 @@ impl &T { // A reference to an immutable T.
     pub fn associated_function(_t: T) { }
 }
 
-impl &mut T { // A reference to a mutable T.
+impl<T> &mut T { // A reference to a mutable T.
     pub fn change_the_referenced(&self, new_value: T) {
         **self = new_value; // `self` is a reference to a reference. That's why double dereferencing to get the value.
     }
@@ -724,3 +724,14 @@ fn references_in_contract_call_parameters() {
         coins: *r_n // OK.
     }();
 }
+
+
+/// # Future considerations
+/// These are some language and library features related to references
+/// that might be useful in Sway context. Judging their usefulness can
+/// be postponed to after references are implemented, and is thus out
+/// of scope of this RFC.
+///
+/// ## `Deref` and `DerefMut` traits
+/// Similar to Rust, Sway could provide `Deref` and `DerefMut` traits
+/// together with the deref coercion.
