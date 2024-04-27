@@ -71,6 +71,9 @@ fn built_in_types_and_enums() {
 
 fn structs_and_tuples() {
     // Same as above with the addition that the . operator dereferences the reference.
+    // Operator . is defined for references to structs and tuples using this recursive definition:
+    //   <reference>.<field/element name> := (*<reference>).<field/element name>.
+
     let mut s = Struct { x: 0u64 };
     let r_s = &mut s; // `r_s` is immutable reference to a mutable struct.
 
@@ -90,16 +93,25 @@ fn structs_and_tuples() {
     }
 
     let x = r_t.0 + r_t.1;
+
+    let r_r_r_s = &s;
+    let x = r_r_r_s.x; // Same as `(***r_r_r_s).x`.
 }
 
 fn arrays() {
     // Same as above with the addition that the [] operator dereferences the reference.
+    // Operator [] is defined for references to arrays using this recursive definition:
+    //   <reference>[<index>] := (*<reference>)[<>]
+
     let mut a = [0, 0, 0];
     let r_a = &a;
 
     r_a[0] = 1; // Same as `(*r_a)[0] = 1`.
 
     let x = r_a[0] + r_a[1];
+
+    let r_r_r_a = &a;
+    let x = r_r_r_a[x]; // Same as `(***r_r_r_a)[x]`.
 }
 
 
@@ -154,9 +166,9 @@ fn referencing_references() {
     let mut m_r_m_r_a = &mut m_r_a;
     let r_m_r_m_r_a = &mut m_r_a;
 
-    let x = r_m_r_m_r_a.x; // ERROR: . dereferences reference to struct and tuples but not to other references.
+    let x = r_m_r_m_r_a.x; // OK: Operator . dereferences recursively.
     let x = ***r_m_r_m_r_a.x; // OK.
-    let x = **r_m_r_m_r_a.x; // OK: Also ok, because the last reference is a reference to struct.
+    let x = **r_m_r_m_r_a.x; // OK.
 }
 
 
