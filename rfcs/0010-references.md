@@ -348,10 +348,14 @@ most of its uses with a properly represented `[u8]`.
 
 Implementing the new reference construct should require:
 
-* parser changes to introduce the new syntax
-* adding the new types to the type system
-* implementing the heap allocation for types
-* implementing a simple escape analysis that avoids heap allocation if there are no references in code
+* parser changes to introduce the new syntax for referencing (`&`) and dereferencing (`*`).
+* adding the new types to the type system, `&T` and `&mut T`.
+* implementing heap allocation for values.
+* implementing escape analysis to avoid heap allocation.
+
+Escape analysis will be improved over time. We want to stepwise come to the solution that
+heap-allocates only values whose actual lifecycle is `static` and that cannot be promoted
+to live on a stack of any of the functions in the call stack.
 
 ## Pointers
 
