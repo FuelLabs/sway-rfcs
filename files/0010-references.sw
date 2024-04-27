@@ -299,8 +299,11 @@ fn referencing_parts_of_aggregates() {
 /// References returned from functions are l-values.
 
 // Ideally, we want to have escape analysis so that in the case of the function below, we can
-// generate a warning for the first argument saying:
-// Copying immutable compound types is expensive and in this case not necessary. Use `a: &A` instead. 
+// generate a warning for the first argument similar to this one:
+//   Copying immutable structs is expensive and in this case not necessary. Consider using `a: &A` instead. 
+
+// The first two parameters are passed by-value. The remaining parameters are passed
+// by-reference.
 fn fn_takes_references(a: A, mut m_a: A, r_a: &A, r_m_a: &mut A, mut m_r_m_a: &mut A) {
     let x = a.x + m_a.x + r_a.x + m_r_a.x + m_m_r_a.x;
 
@@ -315,9 +318,17 @@ fn fn_takes_references(a: A, mut m_a: A, r_a: &A, r_m_a: &mut A, mut m_r_m_a: &m
     let new_m_a = A { x: 0 };
 
     a = new_a; // ERROR. `a` is not mutable.
+
     m_a = new_a; // OK. Replaces `a` but the change does not affect the original.
+
     r_a = &new_a; // ERROR. `r_a` is not mutable.
+
     r_m_a = &new_a; // ERROR. `r_m_a` is not mutable.
+
+    // Reassigning `m_r_m_a` does not create a copy of the RHS.
+    // Sunce `m_r_m_a` is a reference, the semantics of the reassignment
+    // is setting `m_r_m_a` to refer to a different value,
+    // without creating a copy of that value.
     m_r_m_a = &mut new_a; // ERROR: `new_a` is not mutable.
     m_r_m_a = &mut new_m_a; // OK. Redirecting the mutable reference to a new mutable value.
     m_r_m_a = &new_m_a; // ERROR: If redirected, `m_r_m_a` must be still a reference to a mutable value.
