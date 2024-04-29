@@ -173,9 +173,19 @@ fn referencing_references() {
 
 
 /// # References and pattern matching
-/// When pattern matching a reference, in case of a requirement we actually match the value behind the reference.
-/// In case of a variable declaration, we declare a reference which takes over the mutability of the matched reference.
-/// As with other variables declared in pattern matching, the reference itself is always immutable.
+/// It is possible to both match references (`match <reference expression> { ... }`)
+/// and to declare pattern variables as refrences via `ref` keyword.
+///
+/// When pattern matching a reference:
+/// - in case of a requirement we actually match the value behind the reference.
+/// - in case of a variable declaration, a reference is declared. That reference is `&mut` if the matched reference is `&mut`.
+/// - as with other variables declared in pattern matching, the reference variable itself is immutable unless declared as `mut`.
+///
+/// Thus, dereferencing matched references is usually not necessary (and is actually
+/// very likely unwanted because it would potentially create unnecessary copies).
+/// It only affects the definition of variables declared in match arms,
+/// if they are going to be references or not.
+
 enum E {
     A: (&mut A),
     B: (&B),
@@ -183,57 +193,95 @@ enum E {
 }
 
 fn references_and_pattern_matching() {
+    let mut x = 123u64;
+
+    match x {
+        mut a => {
+            a = 22; // `a` is a mutable copy of `x`. `x` remainds unchanged.
+                    // We will issue a warning in case only `mut` is used,
+                    // because it is very likely that `ref mut` was intended.
+        },
+        ref a => assert_eq(*a, x), // `a` is `&u64` referencing `x`.
+        ref mut a => { // `a` is `&mut u64` referencing `x`. OK because `x` is mutable, otherwise an error.
+            *a = 44; // Changes `x`.
+            a = &mut 321; // ERROR: `a` itself is not mutable. It just refers to a mutable value.
+        },
+        _ => {},
+    }
+
+    match &x {
+        0 => {}, // Matching `x` with `0`.
+        &1 => {} // OK. Matching `x` with `1`.
+        &&2 => {} // ERROR: Expected &u64 if referencing constants is used.
+        a => assert_eq(*a, x), // `a` is `&u64` referencing `x`.
+        mut a => {// `a` is a mutable reference to `&u64` referencing `x`.
+            a = &33; // Changes `a` to reference the result of the expression `33`.
+                     // `x` remains unchanged.
+        },
+        ref a => {}, // `a` is `& &u64`, a reference referencing the reference to `x`.
+        ref mut a => { // `a` is `&mut &u64`, a reference referencing the mutable reference to `x`.
+            *a = &55; // Changes `a` to reference the result of the expression `55`.
+                      // `x` remains unchanged.
+            a = &mut &321; // ERROR: `a` itself is not mutable. It just refers to a mutable value.
+        },
+        _ => {},
+    }
+
+    // Similar as above.
+    match &&&x {
+        0 => {}, // Matching `x` with `0`.
+        &1 => {} // ERROR.
+        &&&2 => {} // OK.
+        a => assert_eq(***a, x), // `a` is `&&&u64` referencing `x`.
+        mut a => {// `a` is a mutable reference to `&&&&u64` referencing `x`.
+            a = &&& 33; // Changes `a` to reference the result of the expression `33`.
+                        // `x` remains unchanged.
+        },
+        ref a => {}, // `a` is `& &&&u64`.
+        ref mut a => { // `a` is `&mut &&&u64`.
+            *a = &&& 55; // Changes `a` to reference the result of the expression `55`.
+                         // `x` remains unchanged.
+            a = &mut &&&321; // ERROR: `a` itself is not mutable. It just refers to a mutable value.
+        },
+        _ => {},
+    }
+
+    match &mut x {
+        0 => {}, // Matching `x` with `0`.
+        &mut 1 => {} // OK. Matching `x` with `1`.
+        &1 => {} // ERROR. Must be `&mut`.
+        a => assert_eq(*a, x), // `a` is `&mut u64` referencing `x`.
+        mut a => {// `a` is a mutable reference to `&mut u64` referencing `x`.
+            a = &mut 33; // Changes `a` to reference the result of the expression `33`.
+                         // `x` remains unchanged.
+        },
+        ref a => {}, // `a` is `& &mut u64`, a reference referencing the reference to mutable `x`.
+        ref mut a => { // `a` is `&mut &mut u64`, a reference referencing the mutable reference to mutable `x`.
+            *a = &mut 55; // Changes `a` to reference the result of the expression `55`.
+        },
+        _ => {},
+    }
+
     let mut a = A { x: 0 };
     let e = E::A(&mut a);
 
     match e { // Note that `e` itself is not a reference.
         E::A( A { x: 111 }) => {}, // Matches the referenced value's `x` against 111. 
-        E::A(a) => {
-            a.x = 222; // `a` is a reference to a mutable `A`.
+        E::A( &mut A { x: 111 }) => {}, // Same as above.
+        E::A( &A { x: 111 }) => {}, // ERROR: Must be `&mut`.
+        E::A(a) => { // `a` is `&mut A`.
+            a.x = 222; // The original value `a.x` is changed.
         },
-        T(x, 555) => { // Match the second value (dereferenced) against 555.
+        E::B( B { r_i_a: A { x: 111 }, .. }) => {},
+        E::T(x, 555) => { // Match the second value (dereferenced) against 555.
             *x = 222; // `x` is a reference to a mutable `u64`.
-        }
+        },
+        E::T(_, &777) => {} // OK.
+        _ => {},
     };
 
-    // If the matched value is a reference, for the requirements we again match against the value behind the
-    // final dereferenced reference.
-    // In case of a variable declaration, for variable declarations we agai declare a reference, and can thus
-    // end up in references to references.
-
-    let r_e = &e;
-
-    match r_e { // Note that `r_e` itself is a reference.
-        E::A( A { x: 111 }) => {}, // Matches the referenced (over two references) value's `x` against 111. 
-        E::A(a) => {
-            *a.x = 222; // `a` is a reference to a reference to mutable `A` and, thus, needs to be dereferenced to access the referenced reference.
-        },
-        T(x, 555) => { // Match the second value (dereferenced twice) against 555.
-            **x = 222; // `x` is a reference to a reference to mutable `u64`.
-        }
-    };
-
-    // Similarly, for references on references we apply the above rule recursively.
-    let r_r_r_e = &&r_e;
-
-    match r_r_r_e {
-        E::A( A { x: 111 }) => {}, // Matches the referenced (over all references) value's `x` against 111. 
-        E::A(a) => {
-            ***a.x = 222; // Dereference until we come to the final reference.
-        },
-        T(x, 555) => { // Match the second value (dereferenced over all references) against 555.
-            ****x = 222; // Dereference until we come to the final reference.
-        }
-    }
-
-    // Of course, the reference can be dereferenced as a matched value, which then gives the same
-    // semantics as matching the value. In the example above:
-    //    `match *r_e { ... }`
-    // would have the same semantics as:
-    //    `match e { ... }`
-    // Thus, dereferencing the matched reference is usually not necessary.
-    // It only affects the definition of the variables declared in the match arms,
-    // if they are going to be references or not.
+    // Detailed behavior in case of referencing aggregates and embedding references will be 
+    // defined at the later stage and prior to the implementation of the feature.
 }
 
 
