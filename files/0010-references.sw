@@ -608,7 +608,24 @@ fn main() -> &u64 {} // ERROR.
 
 
 /// # Equality of references
-/// Operator == will compare the referenced content if the referenced type implements `std::ops::Eq`.
+/// References will allow us to redefine the `core::ops::Eq` trait to avoid creating copies.
+/// Currently, the `core::ops::Eq`'s `eq` method is defined as:
+///
+///   fn eq(self, other: Self) -> bool;
+///
+/// Both `self` and `other` are passed by-value which is problematic from the performance point
+/// of view. E.g., in examples of comparing arrays of structs, arrays are always copied, and then
+/// each individual struct, before getting the copies compared.
+///
+/// The new definition fo `eq` will be:
+///
+///   fn eq(&self, other: &Self) -> bool;
+///
+/// Calling the operator `==` on `x` and `y` will be semantically translated to `(&x).eq(&y)`.
+/// `core::ops` will provide a standard implementation for `impl<T> Eq for &T where T: Eq`. 
+///
+/// From the programmers perspective, operator `==` will compare the referenced content,
+/// if the referenced type implements `core::ops::Eq`.
 /// To compare references as pointers (checking if they point to the same memory location), the 
 /// `__eq` intrinsic has to be used.
 fn equality_of_references() {
@@ -621,12 +638,13 @@ fn equality_of_references() {
     let r_s_a = S { x: 0 };
     let r_s_b = S { x: 0 };
 
-    assert(r_s_a == r_s_b); // ERROR: `S` does not implement `std::ops::Eq`.
+    assert(r_s_a == r_s_b); // ERROR: `S` does not implement `core::ops::Eq`.
 
     // It is not possible to compare references and values without referencing or dereferencing.
     assert(r_a == 2); // ERROR.
     assert(*r_a == 2); // OK.
     assert(r_a == &2); // OK.
+    assert(&&&&42 == &&&&42); // OK.
 }
 
 
