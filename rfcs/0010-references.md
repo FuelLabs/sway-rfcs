@@ -130,8 +130,8 @@ For detailed examples of syntax and semantics see the accompanied file [0010-ref
 
 ## Pointers
 
-There are cases where one may want to directly manipulate memory addresses with pointer arithmetic,
-to allow for this we have a pointer type that represents a single address: `*mut T` where `T` is the type being pointed to.
+There are cases where one may want to directly manipulate memory addresses with pointer arithmetic.
+To allow for this we have a pointer type that represents a single address: `*mut T` where `T` is the type being pointed to.
 
 Pointers can be obtained by using the `__addr_of` intrinsic on a reference and dereferenced using the `__deref` intrinsic, like so:
 
@@ -152,7 +152,12 @@ let ptr_val: u64 = __deref(ptr);
 assert_eq(ref, &ptr_val); // Equality of references is the equality of referenced values.
 ```
 
-Dereferencing an invalid pointer is Undefined Behavior.
+A pointer that does not point to memory currently allocated by the program is considered to be an _invalid pointer_.
+Dereferencing an invalid pointer is an undefined behavior that depends on the underlying VM implementation.
+
+E.g., FuelVM has the concept of stack and heap, and instructions that access memory must pass the [ownership check](https://specs.fuel.network/master/fuel-vm/index.html#access-rights). Thus, dereferencing and accessing an invalid pointer in case of the FuelVM will result in VM panic.
+
+Other VMs could have different behavior. Thus, from the language perspective, dereferencing an invalid pointer is an undefined behavior.
 
 ## Slices
 
