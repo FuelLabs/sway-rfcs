@@ -1,4 +1,4 @@
-- Feature Name: Configuration Time Constants, `config_time_constants`
+- Feature Name: `config_time_constants`
 - Start Date: 2022-10-01
 - RFC PR: [FuelLabs/sway-rfcs#0006](https://github.com/FuelLabs/sway-rfcs/pull/19)
 - Sway Issue: [FueLabs/sway#1498](https://github.com/FuelLabs/sway/issues/1498)

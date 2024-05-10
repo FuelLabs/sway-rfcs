@@ -1,5 +1,5 @@
-- Feature Name: Collection Context
-- Start Date: Sep 19 2022
+- Feature Name: `collection_context`
+- Start Date: 2022-09-19
 - RFC PR: [FuelLabs/sway-rfcs#0015](https://github.com/FuelLabs/sway-rfcs/pull/15)
 - Sway Issue: [FueLabs/sway#1819](https://github.com/FuelLabs/sway/issues/1819)
 
