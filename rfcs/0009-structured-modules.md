@@ -1,4 +1,4 @@
-- Feature Name: standard_module_structure
+- Feature Name: `standard_module_structure`
 - Start Date: 2023-02-14
 - RFC PR: [FuelLabs/sway-rfcs#24](https://github.com/FuelLabs/sway-rfcs/pull/24)
 - Sway Issue: [FueLabs/sway#4191](https://github.com/FuelLabs/sway/issues/4191)

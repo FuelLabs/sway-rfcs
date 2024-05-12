@@ -1,4 +1,4 @@
-- Feature Name: Storage Keys 
+- Feature Name: `storage_keys` 
 - Start Date: 2023-02-10)
 - RFC PR: [FuelLabs/sway-rfcs#0023](https://github.com/FuelLabs/sway-rfcs/pull/023)
 - Sway Issue: [FueLabs/sway#3043](https://github.com/FuelLabs/sway/issues/3043)

@@ -1,4 +1,4 @@
-- Feature Name: evm_backend
+- Feature Name: `evm_backend`
 - Start Date: 2022-12-22
 - RFC PR: [FuelLabs/sway-rfcs#0000](https://github.com/FuelLabs/sway-rfcs/pull/001)
 - Sway Issue: [FueLabs/sway#EVM](https://github.com/FuelLabs/sway/issues?q=is%3Aissue+is%3Aopen+label%3AEVM)

@@ -375,7 +375,7 @@ info: For more information, see:
 - \[3\] [Compiler Errors for Humans](https://elm-lang.org/news/compiler-errors-for-humans)
 - \[4\] [Compilers as Assistants](https://elm-lang.org/news/compilers-as-assistants)
 - \[5\] [Concepts Error Messages for Humans](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2429r0.pdf)
-- \[6\] [Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research](https://web.eecs.umich.edu/~akamil/papers/iticse19.pdf)
+- \[6\] [Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research](https://www.brettbecker.com/wp-content/uploads/2019/12/becker2019compiler.pdf)
 - \[7\] [Usability improvements in GCC 8](https://developers.redhat.com/blog/2018/03/15/gcc-8-usability-improvements#)
 
 [1]: https://clang.llvm.org/diagnostics.html "Expressive Diagnostics"
@@ -383,5 +383,5 @@ info: For more information, see:
 [3]: https://elm-lang.org/news/compiler-errors-for-humans "Compiler Errors for Humans"
 [4]: https://elm-lang.org/news/compilers-as-assistants "Compilers as Assistants"
 [5]: https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2429r0.pdf "Concepts Error Messages for Humans"
-[6]: https://web.eecs.umich.edu/~akamil/papers/iticse19.pdf "Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research"
+[6]: https://www.brettbecker.com/wp-content/uploads/2019/12/becker2019compiler.pdf "Compiler Error Messages Considered Unhelpful: The Landscape of Text-Based Programming Error Message Research"
 [7]: https://developers.redhat.com/blog/2018/03/15/gcc-8-usability-improvements "Usability improvements in GCC 8"
