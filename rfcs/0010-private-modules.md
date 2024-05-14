@@ -1,4 +1,4 @@
-- Feature Name: private_modules
+- Feature Name: `private_modules`
 - Start Date: 2023-04-05
 - RFC PR: [FuelLabs/sway-rfcs#0007](https://github.com/FuelLabs/sway-rfcs/pull/25)
 - Sway Issue: [FueLabs/sway#4446](https://github.com/FuelLabs/sway/issues/4446)

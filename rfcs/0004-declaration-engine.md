@@ -1,4 +1,4 @@
-- Feature Name: Declaration Engine
+- Feature Name: `declaration_engine`
 - Start Date: 2022-07-13
 - RFC PR: [FuelLabs/sway-rfcs#0011](https://github.com/FuelLabs/sway-rfcs/pull/11)
 - Sway Issue: [FueLabs/sway#1821](https://github.com/FuelLabs/sway/issues/1821), [FueLabs/sway#1692](https://github.com/FuelLabs/sway/issues/1692)
