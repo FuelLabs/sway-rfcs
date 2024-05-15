@@ -28,7 +28,7 @@ values such as `raw_ptr` and `raw_slice`.
 
 Unlike Rust, Sway does not manage lifetimes. Due to the nature of smart contract
 execution, dynamic memory usage only grows and allocated memory is allocated for
-the entire lifetime of the execution. In Rust terms, every reference value has a
+the entire lifetime of the execution. In Rust terms, every dynamic value has a
 lifetime of `'static`.
 
 This allows us to do away with some complexity and handle values more like they
@@ -37,73 +37,135 @@ In most cases, you shouldn't need to use explicit pointer types.
 
 ## Data types
 
-In Sway there are two types of data types. Value types and Reference types.
+In Sway there are two types of data types. Built-in types and compound types.
 
-Value types live for the lifetime of the function they are declared in. They are
-passed and returned by value, which means their value is directly copied. Value
-types include `u8`, `u16`, `u32`, `u64`, tuples such as `()`, `(u8, u64)` and
-pointers such as `*mut u8`.
+Built-in types include `u8`, `u16`, `u32`, `u64`, and pointers such as `*mut u8`.
+Compound types are arrays, structs, tuples, and enums.
 
-Reference types are represented by a pointer to a memory region and can have a
-dynamic size. They are passed and returned by reference, which means the pointer
-is copied and still points to the same data.
+Both built-in and compound types live for the lifetime of the function they are declared in.
+They are passed and returned by value, which means their value is directly copied.
 
-There are two kinds of references. Slim and fat.
+Internally, access to compound types (also called aggregates within the compiler) is
+realized via pointer to a memory region. That's why those types are internally called
+reference types. Note that from the Sway programmer's perspective, they still have value semantics.
+
+There are two kinds of such internal references. Slim and fat.
 
 Slim references are implemented using a single address. Slim references
-include structs, enums and arrays, such as `String`, `Option`, `[u8; 42]`.
+include structs, enums, and arrays, such as `String`, `Option`, `[u8; 42]`.
 
 Fat references are implemented using an address and a small amount of additional
 data, either a length or a pointer to a more complex table. Fat references
 include slices, such as `[u8]`, `str`.
 
-## Box
+## References
 
-It is sometimes desirable to have a reference to a value type, such as for
-passing a mutable reference to it to a function. This can be achieved with the
-`Box` struct, which is so defined:
+References mentioned above are an internal compiler construct, but from the programmer's
+perspective still regular value types, copied in assignments, and passed and returned by value.
+
+From the programmer's perspective, it is sometimes desirable to have a reference to a value type,
+such as for passing a mutable reference to value to a function or declaring a recursive data type.
+
+This can be achieved with the new language construct, _references_.
+
+References to values can be obtained by the reference operator &.
+References have their own mutability and can point to mutable or immutable values.
+Thus, we support mutable references to mutable values and any combination of the two.
+
+The below example shows how a reference can be declared.
 
 ```sway
-pub struct Box<T> {
-    val: T
-}
+let mut m_i = 0u64;
+let r_m_i = &mut m_i; // Immutable reference to a mutable `m_i`.
+let mut m_r_m_i = &mut m_i; // Mutable reference to a mutable `m_i`.
+let r_m_i = &m_i; // Immutable reference to an immutable (via reference) `m_i`.
+let mut r_m_i = &m_i; // Mutable reference to an immutable (via reference) `m_i`.
+
+let i = 0u64;
+let r_m_i = &mut i; // ERROR: `i` is not mutable.
 ```
 
-and produces the desired memory representation.
+The dereference operator * is used to access the referenced value.
+In addition, if the reference refers to a compound type, the operators . and [] automatically dereference.
+
+```sway
+let mut r_i = &i; // Mutable reference to immutable a `u64`: r_i: &u64.
+let mut r_m_i = &mut m_i; // Mutable reference to a mutable `u64`: r_i: &mut u64.
+
+*r_i = 1; // ERROR: Referenced value is not mutable.
+r_1 = &x; // OK: `r_1` is mutable.
+
+*r_m_i = 1; // OK: Changes `m_i`.
+r_m_i = &x; // OK: `r_m_i` is mutable.
+
+// Accessing built-in types and enums over reference via dereferencing operator (*).
+let a = 2 * *r_i; 
+
+let mut s = Struct { x: 0u64 };
+let r_s = &mut s; // `r_s` is immutable reference to a mutable struct.
+
+r_s.x = 1; // Same as `(*r_s).x = 1`.
+```
+
+Here, we are listing the major properties of references:
+- References have their own mutability and can point to mutable or immutable values.
+- & operator defines the reference. * operator is dereferencing.
+- . and [] operators also dereference if the reference is a reference to a struct/tuple or array, respectively.
+- References can be parts of aggregates.
+- References can reference other references.
+- References can be used in pattern matching and deconstructing.
+- References can reference parts of aggregates. E.g., having a reference to an array element.
+- References can be passed to and returned from functions.
+- References will play well with iterators and the `for` loop, once implemented.
+- References can be used together with generics.
+- References can be taken from arbitrary expressions, including constants and literals.
+- References can be used in type aliases.
+- `self` keyword will become a reference, and us such comply to the reference passing syntax.
+- References cannot be used in storage.
+- References cannot be used in ABIs and `main` functions.
+- Equality of references is the equality of the values they refer to if the underlying type implements `std::ops::Eq`.
+- `__addr_of` called on a reference returns the address the reference points to.
+
+For detailed examples of syntax and semantics see the accompanied file [0010-references.sw](../files/0010-references.sw).
 
 ## Pointers
 
-There are cases where one may want to directly manipulate memory addresses with pointer arithmetic,
-to allow for this we have a pointer type that represents a single address: `*mut T` where T is the type being pointed to.
+There are cases where one may want to directly manipulate memory addresses with pointer arithmetic.
+To allow for this we have a pointer type that represents a single address: `*mut T` where `T` is the type being pointed to.
 
 Pointers can be obtained by using the `__addr_of` intrinsic on a reference and dereferenced using the `__deref` intrinsic, like so:
 
 ```sway
 let val: u64 = 1;
-let ptr: *mut u64 = __addr_of(Box::new(val));
+let ptr: *mut u64 = __addr_of(&val);
 let ptr_val: u64 = __deref(ptr);
 assert_eq(val, ptr_val);
 
-let val: Box<u64> = Box::new(1);
-let ptr: *mut Box<u64> = __addr_of(Box::new(val));
-let ptr_val: Box<u64> = __deref(ptr);
-assert_eq(val, ptr_val);
+let ref: &u64 = &1;
+let ptr: *mut &u64 = __addr_of(&ref);
+let ptr_val: &u64 = __deref(ptr);
+assert_eq(ref, ptr_val); // Equality of references is the equality of referenced values.
 
-let val: Box<u64> = Box::new(1);
-let ptr: *mut u64 = __addr_of(val);
+let ref: &u64 = &1;
+let ptr: *mut u64 = __addr_of(ref); // Returns the address od the referenced value.
 let ptr_val: u64 = __deref(ptr);
-assert_eq(val, Box::new(ptr_val));
+assert_eq(ref, &ptr_val); // Equality of references is the equality of referenced values.
 ```
 
-Dereferencing an invalid pointer is Undefined Behavior.
+A pointer that does not point to memory currently allocated by the program is considered to be an _invalid pointer_.
+Dereferencing an invalid pointer is an undefined behavior that depends on the underlying VM implementation.
+
+E.g., FuelVM has the concept of stack and heap, and instructions that access memory must pass the [ownership check](https://specs.fuel.network/master/fuel-vm/index.html#access-rights). Thus, dereferencing and accessing an invalid pointer in case of the FuelVM will result in VM panic.
+
+Other VMs could have different behavior. Thus, from the language perspective, dereferencing an invalid pointer is an undefined behavior.
 
 ## Slices
 
 Slices represent contiguous areas of dynamic memory.
 They can be used to represent dynamically sized data.
-Slices are represented on the by a pair containing a pointer to the data and a length.
+Slices are represented by a pair containing a pointer to the data and a length.
 
-String slices, of type `str` represent a series of bytes encoding a valid UTF-8 string.
+String slices, of type `str` represent a series of bytes, encoding a valid UTF-8 string.
 This is the type returned by string literals.
 
 ```sway
@@ -118,7 +180,7 @@ let _: [u64] = [1, 2, 3].as_slice();
 
 Slices can be obtained from arrays and other slices by using the `__slice`
 intrinsic. This will produce a smaller slice of the argument type at the
-specified indices. This slicing is bounds checked and will produce a revert if
+specified indices. This slicing is bounds-checked and will produce a revert if
 slicing out of bounds.
 
 
@@ -151,76 +213,72 @@ assert_eq(elem, 3);
 ## Passing values
 
 When values are passed as arguments to a function they are either mutable or
-immutable which is denoted by the `mut` prefix in the argument type.
+immutable which is denoted by the `mut` prefix before the argument name.
 
 Mutable value type arguments can be reassigned.
 
 Mutable reference arguments can both be reassigned and have their fields
-assigned to.
+assigned to, depending on the declaration of the reference.
 
 ```sway
 fn foo(
-    mut arg1: Box<u32>,
-    arg2: Box<u32>,
-    mut arg3: u32,
-    arg4: u32
+    ref: &u32, // Immutable reference to immutable value.
+    mut m_ref: &u32, // Mutable reference to immutable value.
+    mut m_ref_m: &mut u32, // Mutable reference to a mutable value.
+    val: u32 // Immutable value passed by-value.
+    mut m_val: u32, // Mutable value passed by-value.
 ) {
-    // arg1 is mutable so this is legal
-    arg1.val = 0;
+    *ref = 0; // ERROR: The referenced value is immutable.
+    ref = &0; // ERROR: The reference `ref` is immutable.
 
-    // arg1 is mutable so this is legal,
-    // but it won't affect the original value the reference pointed to
-    arg1 = Box { val: 1 };
+    *m_ref = 0; // ERROR: The referenced value is immutable.
+    m_ref = &0; // OK: The reference `m_ref` is mutable.
 
-    // arg2 is immutable so both or these are illegal
-    // arg2.val = 0;
-    // arg2 = Box { val: 1 };
+    *m_ref_m = 0; // OK: The referenced value is mutable.
+    m_ref_m = &0; // OK: The reference `m_ref_m` is mutable.
 
-    // arg3 is mutable so this is legal
-    arg3 = 0;
+    val = 0; // ERROR: `val` is immutable.
 
-    // arg4 is immutable so this is illegal
-    // arg4 = 0;
+    m_val = 0; // OK: `m_val` is mutable.
 }
 ```
 
+For more detailed examples see the section _Passing and returning references from functions_ in the accompanied file [0010-references.sw](../files/0010-references.sw).
+
 ## Returning values
 
-Values returned by functions are mutable by default.
+When returning values from functions, copies are returned, as per the by-value semantics of all Sway types.
 
-You can prepend the return type with `const` to make a reference return type
-immutable and guarantee that the data pointed to by a returned reference type
-will not be mutated.
+When returning references, the mutability of the referenced value can be explicitly specified.
 
 ```sway
-fn foo() -> Box<u32> {
-    Box { val: 0 }
+fn foo() -> &u32 { // Returns a reference to an immutable `u32`.
+    &0
 }
 
-fn bar() -> const Box<u32> {
-    Box { val: 0 }
+fn bar() -> &mut u32 { // Returns a reference to a mutable `u32`.
+    &0
 }
 
 
 pub fn main() {
-    // both of these are legal because foo returns a mutable value 
-    let _ = foo();
-    let mut _ = foo();
+    let r_foo = foo();
+    *r_foo = 1; // ERROR: `r_foo` is a reference to immutable value.
 
+    let r_bar = bar();
+    *r_bar = 1; // OK: `r_bar` is a reference to mutable value.
 
-    // only the first is legal because bar returns an immutable value 
-    let _ = bar();
-    // let mut _ = bar();
+    let mut m_r_foo = foo();
+    m_r_foo = &1; // OK: `m_r_foo` is a mutable reference to immutable value.
+
+    let mut r_bar = bar();
+    m_r_bar = &1; // OK: `m_r_bar` is a mutable reference to mutable value.
 }
 
 ```
 
-Using `const` on value types is not allowed:
+For more detailed examples see the section _Passing and returning references from functions_ in the accompanied file [0010-references.sw](../files/0010-references.sw).
 
-```sway
-// this is illegal
-// fn fun() -> const u32 { 0 }
-```
 
 ## Methods
 
@@ -234,11 +292,11 @@ struct S {
 }
 
 impl S {
-    pub fn foo(self) {
+    pub fn foo(&self) {
       // illegal since self is immutable
       // self.a = 0;
     }
-    pub fn foo(mut self) {
+    pub fn foo(&mut self) {
       // legal since self is mutable
         self.a = 0;
     }
@@ -246,15 +304,18 @@ impl S {
 
 ```
 
+For more detailed examples see the section _`self` keyword_ in the accompanied file [0010-references.sw](../files/0010-references.sw).
+
+
 ## Migration
 
 Existing codebases can adapt to this change by changing every occurrence of `ref
-mut` to `mut` and every use of `raw_slice` and `raw_ptr` to uses of `Box`, typed
+mut` to `&mut` and every use of `raw_slice` and `raw_ptr` to uses of references, typed
 pointer and slice types.
 
-In general, switching untyped pointers to a properly typed `Box`, even a generic
-`Box<T>`, is preferred. Pointers for whom the pointee isn't a value that can be
-named may need to use `Box<()>` or `*mut ()`, the former is preferred.
+In general, switching untyped pointers to a properly typed reference, even a generic
+`&T`, is preferred. Pointers for whom the pointee isn't a value that can be
+named may need to use `&()` or `*mut ()`, the former is preferred.
 
 # Reference-level explanation
 
@@ -290,14 +351,16 @@ most of its uses with a properly represented `[u8]`.
 
 ## References
 
-Clarifying the reference syntax for function calls should only require a bunch
-of small changes to the parser, except for the introduction of `const` return
-values.
+Implementing the new reference construct should require:
 
-The way mutability is currently checked should already be compatible with
-returning such immutable values and checking them against the mutability of
-their local environment (even for a `let`), however we will need to introduce a
-check to make sure that `const` is only used with reference types.
+* parser changes to introduce the new syntax for referencing (`&`) and dereferencing (`*`).
+* adding the new types to the type system, `&T` and `&mut T`.
+* implementing heap allocation for values.
+* implementing escape analysis to avoid heap allocation.
+
+Escape analysis will be improved over time. We want to stepwise come to the solution that
+heap-allocates only values whose actual lifecycle is `static` and that cannot be promoted
+to live on a stack of any of the functions in the call stack.
 
 ## Pointers
 
@@ -327,14 +390,8 @@ borrow semantics is worth the cost. We may want to make the particulars of how
 references work in Sway explicit in documentation aimed at programmers coming
 from Rust.
 
-The proposed formulation contains some ambiguity between mutable references
-and references to mutable data. This should not be a major issue in practice as
-the edge cases that require expressing the difference are rare, but those rare
-cases should be expressible with `*mut` and `*const` pointers once we eventually
-introduce the pair of them.
-
 Abstracting away memory management too much might be a drawback for Sway and its
-positioning as a smart-contract language, however maintaining access to pointer
+positioning as a smart-contract language. However maintaining access to pointer
 arithmetic should still allow for atypical usage patterns without compromising
 the use of safe and zero cost abstractions for most cases.
 
@@ -343,47 +400,32 @@ the use of safe and zero cost abstractions for most cases.
 [rationale-and-alternatives]: #rationale-and-alternatives
 
 To make the use of references more explicit and maintain syntax legibility for
-people coming from Rust we could have chosen to use `&` everywhere a reference
-is used and/or implicitly added it for unqualified reference types. However the
-reason for Rust's use of this syntax rather than ML's terseness is to support a
-borrow checker and guarantees that we do not make. The extra syntax burden does
-not seem worth it since we do not provide such guarantees, nor need to provide
-them. It can even be misleading.
+people coming from Rust we have chosen to use `&` everywhere a reference
+is used. However the reason for Rust's use of this syntax rather than ML's
+terseness is to support a borrow checker and guarantees that we do not make.
+This could be misleading at first for programers coming from Rust. We will properly
+document the difference between Sway references and Rust borrowing.
+We believe that the difference, properly presented, will be straightforward and
+easy to understand. Apart from that, the chosen syntax should feel natural for
+programers coming from Rust.
 
 Since we're leaning more towards ML, we may also have chosen to use `ref`
-instead of `Box` to denote reference types. However we already majorly borrow
-from Rust for our library abstractions, and a single field struct seems like the
-simplest way of generating a reference type in Sway as it is.
-
-The ambiguity as to the mutability of references or their content leads to a
-choice when picking function argument syntax. i.e.: we could have used  `val:
-mut T` or `mut val: T` or any combination of the two. Since we decided to
-collapse the mutability into one to simplify things, the current syntax is used
-since it is closer to the existing Sway behavior.
-
-The use of `const` to denote returning const references is paricularly
-conspicuous. The issue is that in Rust and in current Sway, returing an
-unqualified reference type means returning a mutable type. Breaking this
-assumption would not just be a big breaking change but may not even be a good
-idea since mutable values are what people want to return most of the time.
-
-Adding a qualifier seems like the least painful way to add the ability to return
-immutable references (which is an absolute requirement). We may want to later
-consider forcing people to add `const` or `mut` to their return values at a
-later date, and perhaps even later make the `const` implicit.
+to denote reference types. However we already majorly borrow
+from Rust for our library abstractions. Moreover, the `ref` syntax felt much verbose.
 
 # Prior art
 
 [prior-art]: #prior-art
 
-A lot of the design choices of this RFC have to do with strinking the balance
+A lot of the design choices of this RFC have to do with striking the balance
 between Rust and ML's levels of abstraction. Sway is not meant to be a general
 purpose systems programming language, but it is not a functional memory managed
 language either. We want to maintain access to memory primitives whilst making
 most Sway code terse, legible and easily understandable.
 
 As prior art we considered Rust, ML and other managed GC languages such as Java
-or C# that have similar simplified memory models.
+or C# that have similar simplified memory models. For the parts of the references
+semantics we borrow from C++.
 
 
 # Unresolved questions
@@ -400,16 +442,6 @@ How dynamic types interact with the ABI will have to be resolved in a later RFC.
 # Future possibilities
 
 [future-possibilities]: #future-possibilities
-
-We could introduce a marker trait (like `Copy`) to make the distinction between value types
-and references explicit through the type system. 
-
-As previously discussed, we may consider eventually making reference returns
-immutable by default, however this would have to go through multiple iterations
-to make the qualifiers explicit and then reverse the implicit qualifification.
-
-We may want to introduce a `*` operator that works over `__deref` and/or
-allowing `Box` to use that operator.
 
 We should consider introducing slicing and indexing operator such as `[0..n]`
 and `[0]`. We needn't introduce the notion of a range yet to make those work.
