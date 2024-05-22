@@ -51,7 +51,8 @@ The deployment process takes care of generating proxy bytecode, deploying contra
 3. **Subsequent Deployments**:
     - Check if a proxy address already exists.
     - Check storage layout consistency between the proxy and the new implementation contract.
-    - If storage layout is consistent, deploy the new implementation contract.
+    - Check for breaking changes in the ABI.
+    - If storage layout is consistent and no breaking changes are found in the ABI, deploy the new implementation contract.
     - Update the existing proxy contract to point to the new implementation contract's address.
 
 ```mermaid
@@ -66,8 +67,10 @@ graph TD
     H --> I[Store Proxy Address in Forc.toml]
     D -- Yes --> J[Check Storage Layout Consistency]
     J -- Inconsistent --> X[Abort Deployment]
-    J -- Consistent --> K[Deploy New Implementation Contract]
-    K --> L[Update Existing Proxy Storage with New Implementation Address]
+    J -- Consistent --> K[Check for ABI Breaking Changes]
+    K -- Breaking Changes --> Y[Abort Deployment]
+    K -- No Breaking Changes --> L[Deploy New Implementation Contract]
+    L --> M[Update Existing Proxy Storage with New Implementation Address]
 ```
 
 ### **Usability Features**
