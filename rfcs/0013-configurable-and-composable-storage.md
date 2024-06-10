@@ -200,7 +200,7 @@ storage {
 
 [using-storage-types-in-code]: #using-storage-types-in-code
 
-All storage types will be implementing `Storage::new()` and `Storage::init()` constructors that will create an uninitialized and initialized instance of a storage type, respectively. In addition, they will follow the storage API guidelines explained in the [Storage API guidelines](#storage-api-guidelines).
+All storage types will be implementing `Storage::new()` and `Storage::init()` constructors that will create an uninitialized and initialized instance of a storage type, respectively. In addition, they will follow the storage API guidelines explained in the [Storage API guidelines](#storage-api-design-guidelines).
 
 `Storage` constructors and the atomic `StorageBox` and `StorageEncodedBox` will eliminate the need for using the low-level storage API in the contract code. The low-level API will be needed only when implementing custom storage, and even then, its usage will follow simple, well established patterns.
 
