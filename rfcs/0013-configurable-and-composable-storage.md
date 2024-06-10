@@ -1,6 +1,6 @@
  Name- Feature: `configurable_and_composable_storage`
 - Start Date: 2024-06-10
-- RFC PR: [FuelLabs/sway-rfcs#0000](https://github.com/FuelLabs/sway-rfcs/pull/001)
+- RFC PR: [FuelLabs/sway-rfcs#40](https://github.com/FuelLabs/sway-rfcs/pull/40)
 - Sway Issue: [FueLabs/sway#0000](https://github.com/FuelLabs/sway/issues/001)
 
 # Summary
