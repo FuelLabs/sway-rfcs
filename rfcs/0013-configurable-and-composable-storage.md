@@ -23,7 +23,7 @@ The [`storage_keys` RFC](./0008-storage-handler.md) introduced the concept of a 
   - Similarly, the common methods, like the mentioned `clear()` and `read()` might not have sense for certain storage types but they are still always available.
 - Composing dynamic storage types, e.g., `StorageVec<StorageVec<u64>>`, relays on the `field_id` hack in the `StorageKey`.
   - `field_id` represents an unnecessary cognitive burden when using `StorageKey`s.
-  - Proper usage of `filed_id` is error-prone and its false usage, which is easy to happen, can lead to hard-to-explain bugs like, e.g., [this one](https://github.com/FuelLabs/sway/issues/6036F).   
+  - Proper usage of `field_id` is error-prone and its false usage, which is easy to happen, can lead to hard-to-explain bugs like, e.g., [this one](https://github.com/FuelLabs/sway/issues/6036).   
 - Clearing dynamic storage types, e.g., `StorageVec<T>`, relays on a global hack in the `clear()` method of the `StorageKey`.
 - Dynamic storage types cannot be configured in the `storage` declaration.
   - Those types are always configured as empty Sway structs. E.g., `StorageVec { }`.
@@ -55,7 +55,7 @@ To prove that such implementation is possible and to give a tangible feeling for
 - [sway-libs](../files/0013-configurable-and-composable-storage/sway-libs/) provide:
   - definition of the `Storage` trait as well as few other traits like, e.g., `DeepReadStorage` and `DeepClearStorage`.
   - implementation of the atomic `Storage` types, `StorageBox` and `StorageEncodedBox`.
-  - implementation of STD dynamic storage types like, e.g., `StorageVec` and `StorageMap`.
+  - implementation of standard library dynamic storage types like, e.g., `StorageVec` and `StorageMap`.
 - [user-defined-libs](../files/0013-configurable-and-composable-storage/user-defined-libs/) provide:
   - implementation of a user defined `StoragePair` storage type.
 - [contracts](../files/0013-configurable-and-composable-storage/contracts/) provide:
@@ -81,7 +81,7 @@ The `storage` declaration will get a new operator, `:=`, pronounced _configured 
 
 The type of the LHS storage element must implement the `Storage` trait. This trait denotes a storage type that can be an element of a `storage` declaration. The `Storage` trait is explained in detail in the [The `Storage` trait](#the-storage-trait) chapter of the [Reference-level explanation](#reference-level-explanation).
 
-There are two classes of storage types. _Atomic storage types_ are the leafs of hierarchies of composed storage types. They cannot contain other storage types. _Compound storage types_ are storage types that contain other storage types. Standard library (STD) provides two _atomic storage types_, the [`StorageBox`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_box.sw) and the [`StorageEncodedBox`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_encoded_box.sw), as well as several compound storage types, like e.g., [`StorageVec`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_vec.sw) and [`StorageMap`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_map.sw).
+There are two classes of storage types. _Atomic storage types_ are the leafs of hierarchies of composed storage types. They cannot contain other storage types. _Compound storage types_ are storage types that contain other storage types. The standard library provides two _atomic storage types_, the [`StorageBox`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_box.sw) and the [`StorageEncodedBox`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_encoded_box.sw), as well as several compound storage types, like e.g., [`StorageVec`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_vec.sw) and [`StorageMap`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_map.sw).
 
 To store Sway types of a known size that does not contain pointers or references, the `StorageBox` is used. To store a Sway type of a dynamic size, that implements `AbiEncode` and `AbiDecode`, the `StorageEncodedBox` is used.
 
@@ -185,7 +185,7 @@ For more examples of using storage types in storage declarations, see:
 
 [default-storage-configuration]: #default-storage-configuration
 
-If developers just want to list the `storage` elements, knowing that they will be configured via SDKs, they can list the elements without providing the _configure with_ operator. The types of the values used to configure the elements must implement the `core::default::Default` trait that will be added to the STD.
+If developers just want to list the `storage` elements, knowing that they will be configured via SDKs, they can list the elements without providing the _configure with_ operator. The types of the values used to configure the elements must implement the `core::default::Default` trait that will be added to the standard library.
 
 ```Sway
 storage {
@@ -352,7 +352,7 @@ For more examples on using storage references, see the [`demo_contract_storage_r
 
 This proposal brings breaking changes in:
 - `storage` declarations.
-- existing STD storage types like, e.g., `StorageVec`.
+- existing standard library storage types like, e.g., `StorageVec`.
 - low-level storage API.
 - the code that deals with the storage, via any of the above approaches.
 
@@ -368,7 +368,7 @@ To support explaining breaking changes to existing users and to ease migration w
 
 The implementation of the proposed features relies on a couple of other language features that need to be implemented first. We will only list them here, since their detailed explanation, in certain cases, could require a separate RFC. To follow the reference-level explanation of the configurable and composable storage, it is sufficient to have an intuitive understanding of these language features. Where needed, they are explained in enough detail in the [sample code](../files/0013-configurable-and-composable-storage/).
 
-The [sample code](../files/0013-configurable-and-composable-storage/) provides a detailed view on how the Sway STD part of this RFC will be implemented and used.
+The [sample code](../files/0013-configurable-and-composable-storage/) provides a detailed view on how the standard library part of this RFC will be implemented and used.
 
 Here, we will focus on the compiler support for the feature.
 
@@ -413,7 +413,7 @@ The functions prefixed with `internal` are used only when implementing storage t
 - support configuring arbitrary storage types in `storage` declarations.
 - support type-checking arbitrary composition of storage types.
 
-The get a hands-on feeling for concrete implementations of the `Storage` trait and better understanding of the meaning of its methods and associated types see the [provided implementations of STD storage types](../files/0013-configurable-and-composable-storage/sway-libs/storage/) and the user-defined [`StoragePair`](../files/0013-configurable-and-composable-storage/user-defined-libs/storage_pair.sw).
+The get a hands-on feeling for concrete implementations of the `Storage` trait and better understanding of the meaning of its methods and associated types see the [provided implementations of standard library storage types](../files/0013-configurable-and-composable-storage/sway-libs/storage/) and the user-defined [`StoragePair`](../files/0013-configurable-and-composable-storage/user-defined-libs/storage_pair.sw).
 
 Let's explain the `Storage` type by explaining how it is used by the compiler and when implementing storage types.
 
@@ -537,7 +537,7 @@ To get the feeling for these straightforward and essentially short and compact i
 
 [defining-storage-traits]: #defining-storage-traits
 
-The clear definition of the `Storage` trait allows defining storage traits. A storage trait is a trait that has `Storage` as a supertrait. The STD will come with (at least) two storage traits, `DeepReadStorage` and `DeepClearStorage` both defined in the [`storage.sw`](../files/0013-configurable-and-composable-storage/sway-libs/storage.sw).
+The clear definition of the `Storage` trait allows defining storage traits. A storage trait is a trait that has `Storage` as a supertrait. The standard library will come with (at least) two storage traits, `DeepReadStorage` and `DeepClearStorage` both defined in the [`storage.sw`](../files/0013-configurable-and-composable-storage/sway-libs/storage.sw).
 
 The implementations of storage traits will, similar to the implementations of `Storage`, be straightforward and based on recursive calls to the implementations of the same storage traits on the contained storage types.
 
@@ -549,7 +549,7 @@ By convention, all storage trait will have the suffix `Storage`.
 
 [internal-api-and-the-state-intrinsics]: #internal-api-and-the-state-intrinsics
 
-The STD will still provide the low-level storage `read`, `write`, and `clear` functions. However, unlike now when they are actually sometimes needed in contract code, e.g., to store arrays, in the new storage implementation there should never be a need to use them in contracts. Instead, the atomic `StorageBox` and `StorageEncodedBox` should be used. They provide the same low-level functionality while offering safe storage access.
+The standard library will still provide the low-level storage `read`, `write`, and `clear` functions. However, unlike now when they are actually sometimes needed in contract code, e.g., to store arrays, in the new storage implementation there should never be a need to use them in contracts. Instead, the atomic `StorageBox` and `StorageEncodedBox` should be used. They provide the same low-level functionality while offering safe storage access.
 
 The low-level API will be used only when implementing storage types, and even in those cases not always. Thus, the proposal is to move them to the module named [`internal`](../files/0013-configurable-and-composable-storage/sway-libs/storage/internal.sw) to emphasize that they are, similar to `Storage::internal_` functions, meant to be used only when developing custom storage types.
 
@@ -565,7 +565,7 @@ The only drawback I can think of is the time and effort needed to implement the 
 
 [rationale-and-alternatives]: #rationale-and-alternatives
 
-During the work on this RFC, five different approaches were intensely discussed and modeled in code. Non of them came even near to the simplicity of use and implementation of the proposed approach. Also, all of the discussed approaches could not guarantee an API that would prevent error-prone implementation of storage types, when it comes to the containment and composition semantics.
+During the work on this RFC, five different approaches were intensely discussed and modeled in code. None of them came even near to the simplicity of use and implementation of the proposed approach. Also, all of the discussed approaches could not guarantee an API that would prevent error-prone implementation of storage types, when it comes to the containment and composition semantics.
 
 For the storage API design guidelines, three different approaches were considered. We've tried to, e.g.:
 - additionally distinguish between operations failing because of the storage being uninitialized and because of semantic errors like out of bound access. 
@@ -577,9 +577,9 @@ All three approaches ended up to be less intuitive to use and implement then the
 
 [prior-art]: #prior-art
 
-As the [`storage_keys` RFC](./0008-storage-handler.md) puts it, there is no much prior art that would correspond with the overall direction for storage handling that we took in Sway. This means, having the `storage` elements be distinguished and having the API that communicates that storage operations might fail.
+As the [`storage_keys` RFC](./0008-storage-handler.md) puts it, there is not much prior art that would correspond with the overall direction for storage handling that we took in Sway. This means, having the `storage` elements be distinguished and having the API that communicates that storage operations might fail.
 
-The proposed approach builds on top of those two premisses, and brings robust and easy to implement composable storage types that can be arbitrarily configured in `storage` declarations.
+The proposed approach builds on top of those two premises, and brings robust and easy to implement composable storage types that can be arbitrarily configured in `storage` declarations.
 
 # Unresolved questions
 

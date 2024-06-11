@@ -28,7 +28,7 @@ impl<A, B> StoragePair<A, B> where A: Storage, B: Storage {
 
     //--
     // The below methods consistently apply the API guidelines
-    // exaplained in detail in `api-design/storage_vec.sw` and `api-design/storage_encoded_box.sw`.
+    // explained in detail in `api-design/storage_vec.sw` and `api-design/storage_encoded_box.sw`.
     //--
 
     #[storage(read)]

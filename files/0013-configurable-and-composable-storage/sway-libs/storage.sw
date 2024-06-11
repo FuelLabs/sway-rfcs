@@ -109,7 +109,7 @@ pub trait Storage {
     //--
     // TODO-DISCUSSION: Should we pass the `&Self::Value` here or just the `Self::Value`?
     //                  This is a general question that is not only related to the storage API.
-    //                  It will become relevant when we introduce references in the STD.
+    //                  It will become relevant when we introduce references in the standard library.
     //                  It is about avoiding copying data but not having the move semantics.
     //                  How much can we optimize? How to avoid heap allocations in case of
     //                  using references? Etc.
