@@ -25,7 +25,7 @@ impl<T> StorageVec<T> where T: Storage {
     //--
     #[storage(read)]
     pub fn try_len(&self) -> Option<u64> {
-        storage::internal::read::<u64>(self.self_key)
+        storage::low_level_api::read::<u64>(self.self_key)
     }
 
     //--
@@ -55,7 +55,7 @@ impl<T> StorageVec<T> where T: Storage {
         T::init(element_self_key, value);
 
         // Store the new length.
-        storage::internal::write(self.self_key, len + 1);
+        storage::low_level_api::write(self.self_key, len + 1);
     }
 
     //--
@@ -95,7 +95,7 @@ impl<T> StorageVec<T> where T: Storage {
         //--
         // Just store the new length, without deep clearing the value.
         //--
-        storage::internal::write(self.self_key, len - 1);
+        storage::low_level_api::write(self.self_key, len - 1);
     }
 
     #[storage(write)]
@@ -109,7 +109,7 @@ impl<T> StorageVec<T> where T: Storage {
         let element_self_key = Self::get_element_self_key(&self.self_key, len - 1);
         T::new(element_self_key).deep_clear();
 
-        storage::internal::write(self.self_key, len - 1);
+        storage::low_level_api::write(self.self_key, len - 1);
     }
 
     //--
@@ -166,7 +166,7 @@ impl<T> StorageVec<T> where T: Storage {
     // the `deep_clear` method directly.
     //--
     pub fn clear(&mut self) {
-        storage::internal::write(self.self_key, 0);
+        storage::low_level_api::write(self.self_key, 0);
     }
 
     /* ... Other `StorageVec` methods that follow the same API design guidelines. ... */

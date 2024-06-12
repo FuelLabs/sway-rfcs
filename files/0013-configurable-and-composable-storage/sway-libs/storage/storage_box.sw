@@ -49,7 +49,7 @@ impl<T> Storage for StorageBox<T> where T: Serializable {
 
     #[storage(write)]
     fn init(self_key: &StorageKey, value: &T) -> Self {
-        storage::internal::write(self_key, value);
+        storage::low_level_api::write(self_key, value);
         Self::new(self_key)
     }
 }
@@ -67,17 +67,17 @@ impl<T> StorageBox<T> where T: Serializable {
 
     #[storage(read)]
     fn try_read(&self) -> Option<T> {
-        storage::internal::read::<T>(self.self_key)
+        storage::low_level_api::read::<T>(self.self_key)
     }
 
     #[storage(write)]
     fn write(&mut self, value: &T) {
-        storage::internal::write(self.self_key, value);
+        storage::low_level_api::write(self.self_key, value);
     }
 
     #[storage(write)]
     fn clear(&mut self) {
-        storage::internal::clear::<T>(self.self_key);
+        storage::low_level_api::clear::<T>(self.self_key);
     }
 }
 

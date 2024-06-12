@@ -545,15 +545,15 @@ To get the feeling for these straightforward and essentially short and compact i
 
 By convention, all storage trait will have the suffix `Storage`.
 
-## Internal API and the `__state` intrinsics
+## Low-level API and the `__state` intrinsics
 
-[internal-api-and-the-state-intrinsics]: #internal-api-and-the-state-intrinsics
+[low-level-api-and-the-state-intrinsics]: #low-level-api-and-the-state-intrinsics
 
-The standard library will still provide the low-level storage `read`, `write`, and `clear` functions. However, unlike now when they are actually sometimes needed in contract code, e.g., to store arrays, in the new storage implementation there should never be a need to use them in contracts. Instead, the atomic `StorageBox` and `StorageEncodedBox` should be used. They provide the same low-level functionality while offering safe storage access.
+The standard library will still provide the [low-level storage functions](../files/0013-configurable-and-composable-storage/sway-libs/storage/low_level_api.sw), like `read`, `write`, and `clear`. Currently, these functions are sometimes necessary in contract code, e.g., to store arrays. In the new storage implementation we expected them not to be regularly used in contract code. Instead, the atomic `StorageBox` and `StorageEncodedBox` will be used. They provide the same low-level functionality while offering safe storage access.
 
-The low-level API will be used only when implementing storage types, and even in those cases not always. Thus, the proposal is to move them to the module named [`internal`](../files/0013-configurable-and-composable-storage/sway-libs/storage/internal.sw) to emphasize that they are, similar to `Storage::internal_` functions, meant to be used only when developing custom storage types.
+The low-level API will be used mainly for implementing storage types, and even in those cases not always.
 
-Similarly, the `__state_` intrinsics should be used only in the implementations of the internal API functions. In addition, the `__state_load_word` intrinsic should be changed to return the information if the requested slot was set or unset.
+Similarly, the `__state_` intrinsics should be used only in the implementations of the low-level API functions. In addition, the `__state_load_word` intrinsic should be changed to return the information if the requested slot was set or unset.
 
 # Drawbacks
 

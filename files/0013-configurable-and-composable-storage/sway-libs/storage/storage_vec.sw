@@ -53,7 +53,7 @@ impl<T> Storage for StorageVec<T> where T: Storage {
     #[storage(write)]
     fn init(self_key: &StorageKey, elements: &[T::Value]) -> Self {
         // Store the length at the `self_key`.
-        storage::internal::write(self_key, elements.len());
+        storage::low_level_api::write(self_key, elements.len());
 
         let mut i = 0;
         while i < elements.len() {
@@ -98,7 +98,7 @@ impl<T> StorageVec<T> where T: Storage {
 
     #[storage(read)]
     pub fn try_len(&self) -> Option<u64> {
-        storage::internal::read::<u64>(self.self_key)
+        storage::low_level_api::read::<u64>(self.self_key)
     }
 
     #[storage(write)]
@@ -110,7 +110,7 @@ impl<T> StorageVec<T> where T: Storage {
         T::init(element_self_key, value);
 
         // Store the new length.
-        storage::internal::write(self.self_key, len + 1);
+        storage::low_level_api::write(self.self_key, len + 1);
     }
 
     /// Removes the last element of the [StorageVec] and returns true if there was a removal,
@@ -146,7 +146,7 @@ impl<T> StorageVec<T> where T: Storage {
         }
 
         // Store the new length.
-        storage::internal::write(self.self_key, len - 1);
+        storage::low_level_api::write(self.self_key, len - 1);
     }
 
     #[storage(read)]

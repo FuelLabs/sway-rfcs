@@ -80,10 +80,10 @@ impl<A, B> StoragePair<A, B> where A: Storage, B: Storage {
     #[storage(write)]
     pub fn clear(&mut self) {
         /* ...
-           Clear only the slot at the `self_key` by calling the `storage::internal::clear::<T>(<key>)`
+           Clear only the slot at the `self_key` by calling the `storage::low_level_api::clear::<T>(<key>)`
            where `T` is a type that guarantees a single slot gets cleared.
            
-           TODO-DISCUSSION: See the discussion on clearing API in the `internal.sw`.
+           TODO-DISCUSSION: See the discussion on clearing API in the `low_level_api.sw`.
            ...
         */
     }

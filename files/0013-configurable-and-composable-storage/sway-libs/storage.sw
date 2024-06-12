@@ -37,8 +37,8 @@ pub enum StorageLayout {
 }
 
 //--
-// Functions and methods marked with `internal` are used only by Storage
-// implementors and by the compiler.
+// Functions and methods marked with `internal` are used only by the `Storage`
+// trait implementors and by the compiler.
 //
 // TODO-DISCUSSION: Should we introduce a language feature here and not rely on a naming convention hack?
 //                  E.g., a language feature for something like `pub(impl) fn`.

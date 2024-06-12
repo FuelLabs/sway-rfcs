@@ -89,7 +89,7 @@ impl StorageEncodedBox<T> where T: AbiEncode + AbiDecode {
            and continue reading the `u8` content from the slots.
            If any of the reads fail, the `try_read` fails.
 
-           The implementation uses `storage::internal::read(<key>)`
+           The implementation uses `storage::low_level_api::read(<key>)`
            to actually read from the storage.
            ...
         */;
@@ -109,7 +109,7 @@ impl StorageEncodedBox<T> where T: AbiEncode + AbiDecode {
            Packing also means packing 8 `u8`s into a single `u64`
            and then those `u64`s into slots.
 
-           The implementation uses `storage::internal::write(<key>, <val>)`
+           The implementation uses `storage::low_level_api::write(<key>, <val>)`
            to actually write to the storage.
            ...
         */
@@ -118,7 +118,7 @@ impl StorageEncodedBox<T> where T: AbiEncode + AbiDecode {
     #[storage(write)]
     fn clear(&mut self) {
         /* ...
-           Clear only the slot at the `self_key` by calling the `storage::internal::clear::<T>(<key>)`
+           Clear only the slot at the `self_key` by calling the `storage::low_level_api::clear::<T>(<key>)`
            where `T` is a type that guarantees a single slot gets cleared.
            
            TODO-DISCUSSION: See the discussion on clearing API in the `internal.sw`.
@@ -139,7 +139,7 @@ impl<T> DeepClearStorage for StorageEncodedBox<T> where T: AbiEncode + AbiDecode
     fn deep_clear(&mut self) -> Option<T> {
         /* ...
            Read the length of the `encoded_value` and calculate the
-           optimal (minimal) number of calls to `storage::internal::clear(<key>)`
+           optimal (minimal) number of calls to `storage::low_level_api::clear(<key>)`
            needed to clear the entire value from the storage.
            
            TODO-DISCUSSION: See the discussion on clearing API in the `internal.sw`.

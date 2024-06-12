@@ -1,6 +1,5 @@
 //! This module contains functions for low-level storage access.
-//! These functions should be used only when developing a custom
-//! [Storage] and should never occur in a contract code.
+//! These functions are mostly used when developing a custom [Storage].
 
 // TODO-DISCUSSION: See the comment on `Serializable` in the `storage_box.sw`.
 use core::marker::Serializable;
