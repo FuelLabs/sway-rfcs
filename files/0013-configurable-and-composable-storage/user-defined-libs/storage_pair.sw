@@ -40,7 +40,7 @@ impl<A, B> Storage for StoragePair<A, B> where A: Storage, B: Storage {
         self.self_key
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     fn init(self_key: &StorageKey, pair: &(A::Value, B::Value)) -> Self {
         let first_element_self_key = Self::get_first_element_self_key(self_key);
         let snd_element_self_key = Self::get_snd_element_self_key(self_key);
@@ -91,13 +91,13 @@ impl<A, B> StoragePair<A, B> where A: Storage, B: Storage {
         B::new(Self::get_snd_element_self_key(&self.self_key))
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn set_first(&mut self, value: &A::Value) -> A {
         let first_element_self_key = Self::get_first_element_self_key(&self.self_key);
         A::init(&first_element_self_key, value)
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn set_snd(&mut self, value: &B::Value) -> B {
         let snd_element_self_key = Self::get_snd_element_self_key(&self.self_key);
         A::init(&snd_element_self_key, value)

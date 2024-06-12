@@ -46,7 +46,7 @@ impl<T> StorageVec<T> where T: Storage {
     // This means that the `push` cannot fail, and therefore, we provide only
     // the `push` method, an not a `try_push`.
     //--
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn push(&mut self, value: &T::Value) {
         let len = self.try_len().unwrap_or(0);
 
@@ -84,7 +84,7 @@ impl<T> StorageVec<T> where T: Storage {
     //
     //  fn <operation>_deep_clear(&mut self, checked: bool)
     //--
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn pop(&mut self) -> bool {
         let len = self.try_len().unwrap_or(0);
 
@@ -98,7 +98,7 @@ impl<T> StorageVec<T> where T: Storage {
         storage::low_level_api::write(self.self_key, len - 1);
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn pop_deep_clear(&mut self) -> bool where T: DeepClearStorage {
         let len = self.try_len().unwrap_or(0);
 

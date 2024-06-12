@@ -1,7 +1,7 @@
 contract;
 
 abi Demo {
-    #[storage(write)]
+    #[storage(read_write)]
     fn demo();
 }
 
@@ -71,7 +71,7 @@ storage {
 }
 
 impl Demo for Contract {
-    #[storage(write)]
+    #[storage(read_write)]
     fn demo() {
         //-----------------------------------
 

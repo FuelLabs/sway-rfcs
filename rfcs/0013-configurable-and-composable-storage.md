@@ -346,6 +346,13 @@ storage {
 
 For more examples on using storage references, see the [`demo_contract_storage_references.sw`](../files/0013-configurable-and-composable-storage/contracts/demo_contract_storage_references.sw).
 
+
+## `#[storage]` attributes
+
+[storage-attributes]: #storage-attributes
+
+To explicitly denote that the storage write access right actually means _read and write_, we will rename the existing `#[storage(write)]` attribute to `#[storage(read_write)]`. The `#[storage]` attribute will accept only a single parameter, that will be either `read` or `read_write`.
+
 ## Breaking changes
 
 [breaking-changes]: #breaking-changes
@@ -355,6 +362,7 @@ This proposal brings breaking changes in:
 - existing standard library storage types like, e.g., `StorageVec`.
 - low-level storage API.
 - the code that deals with the storage, via any of the above approaches.
+- `#[storage(write)]` attribute.
 
 Additionally, values stored using the current storage API cannot always be read with the new API and vice versa, because some of the changes will result in a different layout of the stored values within the storage.
 
@@ -398,7 +406,7 @@ pub trait Storage {
 
     const fn self_key(&self) -> StorageKey;
 
-    #[storage(write)]
+    #[storage(read_write)]
     fn init(self_key: &StorageKey, value: &Self::Value) -> Self;
 } {
     const fn as_ref(&self) -> StorageRef<Self> {
@@ -586,12 +594,11 @@ The proposed approach builds on top of those two premises, and brings robust and
 [unresolved-questions]: #unresolved-questions
 
 Through the RFC process I expect the following open questions to be resolved:
-- questions posed in the [sample code](../files/0013-configurable-and-composable-storage/) and marked with `TODO-DISCUSSION`.
-- naming of proposed code elements like, e.g., method/function names, type names, etc. Since those names will become the part of the storage API it is of highest importance to come up with good and expressive names for abstractions.
-
-Also, I expect the current storage attributes, `#[storage(read, write)]`, to be discussed. In the sample code, the existing attributes are used. However, there are two questions to be decided on:
-- if the meaning of `write` remains "read and write" as it is now, the attributes should be renamed to `readonly` and `readwrite`.
-- if we want to strictly distinguish between `read` and `write`, the question is why not introduce `clear` as well, which is currently treated as `write`.
+- [ ] Questions posed in the [sample code](../files/0013-configurable-and-composable-storage/) and marked with `TODO-DISCUSSION`.
+- [ ] Naming of proposed code elements like, e.g., method/function names, type names, etc. Since those names will become the part of the storage API it is of highest importance to come up with good and expressive names for abstractions.
+- [x] The current storage attributes, `#[storage(read, write)]`. There are two questions to be decided on:
+  - [x] If the meaning of `write` remains "read and write" as it is now, the attributes should be renamed, e.g., to `readonly` and `readwrite`.
+  - [x] If we want to strictly distinguish between `read` and `write`, the question is why not introduce `clear` as well, which is currently treated as `write`.
 
 # Future possibilities
 

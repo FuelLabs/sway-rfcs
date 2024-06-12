@@ -50,7 +50,7 @@ impl<T> Storage for StorageVec<T> where T: Storage {
         self.self_key
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     fn init(self_key: &StorageKey, elements: &[T::Value]) -> Self {
         // Store the length at the `self_key`.
         storage::low_level_api::write(self_key, elements.len());
@@ -101,7 +101,7 @@ impl<T> StorageVec<T> where T: Storage {
         storage::low_level_api::read::<u64>(self.self_key)
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn push(&mut self, value: &T::Value) {
         let len = self.try_len().unwrap_or(0);
 
@@ -137,7 +137,7 @@ impl<T> StorageVec<T> where T: Storage {
     //                  although it departs from the Rust and Sway `Vec` counterparts.
     //                  We have to bare in mind, though, that storage APIs are specific.
     //--
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn pop(&mut self) -> bool {
         let len = self.try_len().unwrap_or(0);
 

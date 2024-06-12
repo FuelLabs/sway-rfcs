@@ -114,7 +114,7 @@ pub trait Storage {
     //                  How much can we optimize? How to avoid heap allocations in case of
     //                  using references? Etc.
     //--
-    #[storage(write)]
+    #[storage(read_write)]
     fn init(self_key: &StorageKey, value: &Self::Value) -> Self;
 } {
     const fn as_ref(&self) -> StorageRef<Self> {
@@ -240,6 +240,6 @@ pub trait DeepClearStorage: Storage {
     /// types. Therefore, this method must always be
     /// used with care and only if clearing the entire value is
     /// actually needed.
-    #[storage(write)]
+    #[storage(read_write)]
     fn deep_clear(&mut self);
 }

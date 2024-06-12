@@ -52,7 +52,7 @@ impl<K, V> Storage for StorageMap<K, V> where K: Hash, V: Storage {
         self.self_key
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     fn init(self_key: &StorageKey, elements: &[(K, V::Value)]) -> Self {
         let mut i = 0;
         while i < elements.len() {
@@ -77,7 +77,7 @@ impl<K, V> StorageMap<K, V> where K: Hash, V: Storage {
         StorageKey::new(__sha256((*self_key, element_key)), 0);
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn insert(&mut self, key: K, value: &V:Value) -> V {
         let element_self_key = Self::get_element_self_key(&self_key, key);
         V:init(element_self_key, value)

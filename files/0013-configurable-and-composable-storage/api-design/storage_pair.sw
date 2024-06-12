@@ -41,31 +41,31 @@ impl<A, B> StoragePair<A, B> where A: Storage, B: Storage {
         B::new(Self::get_snd_element_self_key(&self.self_key))
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn set_first(&mut self, value: &A::Value) -> A {
         let first_element_self_key = Self::get_first_element_self_key(&self.self_key);
         A::init(&first_element_self_key, value)
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn set_first_deep_clear(&mut self, value: &A::Value) -> A where A: DeepClearStorage {
         let first_element_self_key = Self::get_first_element_self_key(&self.self_key);
         self.set_element_deep_clear::<A>(&first_element_self_key, value)
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn set_snd(&mut self, value: &B::Value) -> B {
         let snd_element_self_key = Self::get_snd_element_self_key(&self.self_key);
         A::init(&snd_element_self_key, value)
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn set_snd_deep_clear(&mut self, value: &B::Value) -> B where B: DeepClearStorage {
         let snd_element_self_key = Self::get_snd_element_self_key(&self.self_key);
         self.set_element_deep_clear::<B>(&first_element_self_key, value)
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     fn set_element_deep_clear<TElement>(element_self_key: &StorageKey, value: &TElement::Value) -> TElement where TElement: DeepClearStorage {
         match TElement::internal_layout() {
             // If the size of the element is fixed, we will just overwrite the current content, if any.
@@ -77,7 +77,7 @@ impl<A, B> StoragePair<A, B> where A: Storage, B: Storage {
         TElement::init(element_self_key, value)
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     pub fn clear(&mut self) {
         /* ...
            Clear only the slot at the `self_key` by calling the `storage::low_level_api::clear::<T>(<key>)`

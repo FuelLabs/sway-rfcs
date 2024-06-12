@@ -42,7 +42,7 @@ impl StorageEncodedBox<T> where T: AbiEncode + AbiDecode {
     // Thus, to enable clearing of the old content, we provide the
     // `write_deep_clear` method.
     //--
-    #[storage(write)]
+    #[storage(read_write)]
     fn write(&mut self, value: &T) {
         let encoded_value = encode::<T>(value);
 
@@ -60,7 +60,7 @@ impl StorageEncodedBox<T> where T: AbiEncode + AbiDecode {
         */
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     fn write_deep_clear(&mut self, value: &T) {
         let encoded_value = encode::<T>(value);
 
@@ -78,7 +78,7 @@ impl StorageEncodedBox<T> where T: AbiEncode + AbiDecode {
     // Note that we do not have the `clear_deep_clear` equivalent. We expect here to use
     // the `deep_clear` method directly.
     //--
-    #[storage(write)]
+    #[storage(read_write)]
     fn clear(&mut self) {
         /* ...
            Clear only the slot at the `self_key` by calling the `storage::low_level_api::clear::<T>(<key>)`

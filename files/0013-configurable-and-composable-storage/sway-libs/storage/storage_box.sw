@@ -47,7 +47,7 @@ impl<T> Storage for StorageBox<T> where T: Serializable {
         self.self_key
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     fn init(self_key: &StorageKey, value: &T) -> Self {
         storage::low_level_api::write(self_key, value);
         Self::new(self_key)
@@ -70,12 +70,12 @@ impl<T> StorageBox<T> where T: Serializable {
         storage::low_level_api::read::<T>(self.self_key)
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     fn write(&mut self, value: &T) {
         storage::low_level_api::write(self.self_key, value);
     }
 
-    #[storage(write)]
+    #[storage(read_write)]
     fn clear(&mut self) {
         storage::low_level_api::clear::<T>(self.self_key);
     }
@@ -89,7 +89,7 @@ impl<T> DeepReadStorage for StorageBox<T> where T: Serializable {
 }
 
 impl<T> DeepClearStorage for StorageBox<T> where T: Serializable {
-    #[storage(write)]
+    #[storage(read_write)]
     fn deep_clear(&mut self) {
         self.clear()
     }

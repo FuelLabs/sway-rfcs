@@ -4,7 +4,7 @@
 // TODO-DISCUSSION: See the comment on `Serializable` in the `storage_box.sw`.
 use core::marker::Serializable;
 
-#[storage(write)]
+#[storage(read_write)]
 pub fn write<T>(storage_key: &StorageKey, value: &T)
 where T: Serializable
 {
@@ -27,7 +27,7 @@ pub fn read<T>(storage_key: &StorageKey) -> Option<T>
 //                  the type `T`? This would, e.g., easy clearing a known number of bytes.
 //                  Also a dedicated function for clearing the slot, e.g., `clear_slot(<key>)`.
 //--
-#[storage(write)]
+#[storage(read_write)]
 pub fn clear<T>(storage_key: &StorageKey) -> bool
     where T: Serializable 
 {
