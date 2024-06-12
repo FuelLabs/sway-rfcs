@@ -99,18 +99,28 @@ storage {
 If the `Struct` in the above example would have a dynamic size, to store it we just need to replace `StorageBox` with `StorageEncodedBox`:
 
 ```Sway
-struct Struct {
+struct DynStruct { // A struct of dynamic size.
     vec: Vec<u64>,
     txt: String,
 }
 
-box_1: StorageEncodedBox<Struct> := Struct::default(),
-box_2: StorageEncodedBox<Struct> := Struct { vec: Vec::from([1, 2, 3]), txt: String::from("text") },
+box_1: StorageEncodedBox<DynStruct> := DynStruct::default(),
+box_2: StorageEncodedBox<DynStruct> := DynStruct { vec: Vec::from([1, 2, 3]), txt: String::from("text") },
 ```
 
-The later usage of `storage` elements is completely the same, regardless if they are stored in the `StorageBox` or `StorageEncodedBox`. The only difference is in the background. The `StorageEncodedBox` encodes and decodes the stored values during reading and writing using the ABI encoding and is thus more gas and storage demanding.
+The later usage of `storage` elements is completely the same, regardless if they are stored in a `StorageBox` or a `StorageEncodedBox`. The only difference is in the way they store their content in the background. The `StorageEncodedBox` encodes and decodes the stored values during reading and writing, using the ABI encoding, and is thus more gas and storage demanding.
 
-It is possible to arbitrarily compose and configure storage types. As an example, let's consider a `StorageVec<StorageVec<StorageBox<Struct>>>` and an intentionally complex `StorageMap`. Note that the `Struct` _must_ be stored in the `StorageBox`. The `StorageVec`, as well as all other _compound storage types_ can store only other store types.
+The possibility of the `StorageEncodedBox` to store `Vec` and other dynamic Sway types opens the question of difference between, e.g., `StorageVec<StorageBox<Struct>>` and the `StorageEncodedBox<Vec<Struct>>`. Does the `StorageEncodedBox<Vec<T>>` actually makes `StorageVec` obsolete?
+
+Not exactly. The `StorageVec` provides access to individual vector elements, thus allowing _pushing and reading individual elements_ in a manner that minimizes the number of storage reads and writes.
+
+The `StorageEncodedBox<Vec<T>>`, on the other hand, always reads and writes back _the entire vector_. It is not possible to get only a particular vector element from the storage, the way `StorageVec` provides it. This is very likely not what developers want in a general case.
+
+The intended usage of the `StorageEncodedBox` is storing instances of dynamic Sway types that are expected to be read and write entirely, as a single unit, like the `DynStruct` used in the above example.
+
+One consequence of having the `StorageEncodedBox` is that the `StorageString` will become obsolete (or just be a type alias for the `StorageEncodedBox<String>`). Because, in the case of the `String` type, we want to store and read the entire string and not having each character be stored and accessible separately.
+
+It is possible to arbitrarily compose and configure storage types. As an example, let's consider a `StorageVec<StorageVec<StorageBox<Struct>>>` and an intentionally complex `StorageMap` shown below. Note that the `Struct` _must_ be stored in the `StorageBox` (or `StorageEncodedBox` if dynamic in size). The `StorageVec`, as well as all other _compound storage types_ can store only other storage types.
 
 The `[<content>]` on the RHSs represent instances of _typed slices_. As explained in the [Reference-level explanation](#reference-level-explanation), typed slices are one of the language prerequisites for the new storage.
 
