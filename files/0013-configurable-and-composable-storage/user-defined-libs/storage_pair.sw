@@ -16,11 +16,11 @@ impl<A, B> Storage for StoragePair<A, B> where A: Storage, B: Storage {
         }
     }
 
-    const fn internal_get_config(self_key: &StorageKey, pair: &(A::Value, B::Value)) -> Self::Config {
+    const fn internal_make_config(self_key: &StorageKey, pair: &(A::Value, B::Value)) -> Self::Config {
         let first_element_self_key = Self::get_first_element_self_key(self_key);
         let snd_element_self_key = Self::get_snd_element_self_key(self_key);
 
-        (A::internal_get_config(&first_element_self_key, &pair.0), B::internal_get_config(&snd_element_self_key, &pair.1))
+        (A::internal_make_config(&first_element_self_key, &pair.0), B::internal_make_config(&snd_element_self_key, &pair.1))
     }
 
     const fn internal_layout() -> StorageLayout {

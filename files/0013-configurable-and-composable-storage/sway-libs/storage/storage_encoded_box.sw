@@ -44,7 +44,7 @@ impl<T> Storage for StorageEncodedBox<T> where T: AbiEncode + AbiDecode {
         }
     }
 
-    const fn internal_get_config(self_key: &StorageKey, value: &T) -> StorageConfig<T> {
+    const fn internal_make_config(self_key: &StorageKey, value: &T) -> StorageConfig<T> {
         StorageConfig {
             self_key: *self_key,
             //--

@@ -32,7 +32,7 @@ impl<T> Storage for StorageBox<T> where T: Serializable {
         }
     }
 
-    const fn internal_get_config(self_key: &StorageKey, value: &T) -> StorageConfig<T> {
+    const fn internal_make_config(self_key: &StorageKey, value: &T) -> StorageConfig<T> {
         StorageConfig {
             self_key: *self_key,
             value: *value,

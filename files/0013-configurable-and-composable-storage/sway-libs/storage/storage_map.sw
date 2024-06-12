@@ -31,12 +31,12 @@ impl<K, V> Storage for StorageMap<K, V> where K: Hash, V: Storage {
         }
     }
 
-    const fn internal_get_config(self_key: &StorageKey, elements: &[(K, V::Value)]) -> Self::Config {
+    const fn internal_make_config(self_key: &StorageKey, elements: &[(K, V::Value)]) -> Self::Config {
         let elements_config: [V::Config] = [];
         let mut i = 0;
         while i < elements.len() {
             let element_self_key = Self::get_element_self_key(&self_key, elements[i].0);
-            elements_config += T::internal_get_config(&element_self_key, &elements[i].1);
+            elements_config += T::internal_make_config(&element_self_key, &elements[i].1);
 
             i += 1;
         }

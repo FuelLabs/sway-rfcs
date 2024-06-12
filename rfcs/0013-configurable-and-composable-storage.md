@@ -400,7 +400,7 @@ pub trait Storage {
 
     const fn new(self_key: &StorageKey) -> Self;
 
-    const fn internal_get_config(self_key: &StorageKey, value: &Self::Value) -> Self::Config;
+    const fn internal_make_config(self_key: &StorageKey, value: &Self::Value) -> Self::Config;
 
     const fn internal_layout() -> StorageLayout;
 
@@ -447,13 +447,13 @@ The provided RHS expression that returns the type specified by `Value` must be c
 
 In the second step, the compiler needs to calculate the concrete storage slots in which to store the _configured with_ RHS values.
 
-This is where the `Storage::Config` associated type comes in play, together with the `const fn` function `internal_get_config()`.
+This is where the `Storage::Config` associated type comes in play, together with the `const fn` function `internal_make_config()`.
 
 Before generating the slots, the compiler already knows:
 - the `StorageKey` at which a particular `storage` element will be stored. This key is calculated based on the element name and namespace, or it is given using the `in` keyword. This storage key is, as mentioned below, called the _self key_ of the storage element.
 - the const eval calculated RHS which has the type `Value`.
 
-The `const fn internal_get_config()` takes exactly those two parameters and provides a result of type `Self::Config`. Every `Self::Config` type is a combination of `StorageConfig` types defined as:
+The `const fn internal_make_config()` takes exactly those two parameters and provides a result of type `Self::Config`. Every `Self::Config` type is a combination of `StorageConfig` types defined as:
 
 ```Sway
 pub struct StorageConfig<TValue>
@@ -479,7 +479,7 @@ In general, the `Config` type is defined recursively as:
 
 Where `[<Config>]` represents a slice of `Config`s and `(<Config>, ...)` a tuple of arbitrary many `Config`s.
 
-During the evaluation of storage slots, the compiler will traverse the structure returned by the `internal_get_config()` and for every occurrence of `StorageConfig<TValue>` it will create the corresponding slot definition.
+During the evaluation of storage slots, the compiler will traverse the structure returned by the `internal_make_config()` and for every occurrence of `StorageConfig<TValue>` it will create the corresponding slot definition.
 
 Note that the constraints set on _atomic storage types_ will ensure that the `TValue` is of a type that compiler can serialize to slots.
 
@@ -537,7 +537,7 @@ E.g., the user-defined `StoragePair<A, B>` also uses this information to provide
 
 With the `Storage` trait defined as such, developing arbitrary storage types becomes straightforward. Every storage type is to be seen as a recursive container of other storage types, where we know that this "recursion" must end with some of the _atomic storage types_.
 
-Thus, the implementations of storage types are essentially recursive compositions of their contained storage types. The `Value` and the `Config` associated types will, in general, be constructed based on the `Value` and `Config` types of the contained storage types. Similarly, the implementations of the `internal_get_config()` and `init()` functions will recursively call those same methods of the contained storage types.
+Thus, the implementations of storage types are essentially recursive compositions of their contained storage types. The `Value` and the `Config` associated types will, in general, be constructed based on the `Value` and `Config` types of the contained storage types. Similarly, the implementations of the `internal_make_config()` and `init()` functions will recursively call those same methods of the contained storage types.
 
 To get the feeling for these straightforward and essentially short and compact implementations of storage types, see the atomic and compound storage types implemented in [`sway-libs`](../files/0013-configurable-and-composable-storage/sway-libs/) and the user-defined [`StoragePair`](../files/0013-configurable-and-composable-storage/user-defined-libs/storage_pair.sw).
 

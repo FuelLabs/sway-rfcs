@@ -20,7 +20,7 @@ impl<T> Storage for StorageVec<T> where T: Storage {
         }
     }
 
-    const fn internal_get_config(self_key: &StorageKey, elements: &[T::Value]) -> Self::Config {
+    const fn internal_make_config(self_key: &StorageKey, elements: &[T::Value]) -> Self::Config {
         // The length is stored at the `self_key`.
         let length_config = StorageConfig {
             storage_key: self_key,
@@ -31,7 +31,7 @@ impl<T> Storage for StorageVec<T> where T: Storage {
         let mut i = 0;
         while i < elements.len() {
             let element_self_key = Self::get_element_self_key(&self_key, i);
-            elements_config += T::internal_get_config(&element_self_key, &elements[i]);
+            elements_config += T::internal_make_config(&element_self_key, &elements[i]);
 
             i += 1;
         }

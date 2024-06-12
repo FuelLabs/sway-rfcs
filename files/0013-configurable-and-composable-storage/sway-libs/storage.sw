@@ -82,7 +82,7 @@ pub trait Storage {
     //--
     const fn new(self_key: &StorageKey) -> Self;
 
-    /// Creates a configuration information for configuring an instance of this [Storage].
+    /// Provides a configuration information for configuring an instance of this [Storage].
     /// The [Storage] will be located at the `self_key` and has to store `values`.
     ///
     /// This function should be used only when developing a custom
@@ -93,7 +93,7 @@ pub trait Storage {
     //  and the `value` will be the the const evaluated configuration value
     //  defined at the RHS of the `:=` operator.
     //--
-    const fn internal_get_config(self_key: &StorageKey, value: &Self::Value) -> Self::Config;
+    const fn internal_make_config(self_key: &StorageKey, value: &Self::Value) -> Self::Config;
 
     /// The [StorageLayout] of this [Storage].
     ///

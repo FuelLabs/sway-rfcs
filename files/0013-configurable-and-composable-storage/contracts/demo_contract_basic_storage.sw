@@ -12,7 +12,7 @@ struct Struct {
 
 storage {
     //--
-    // Compiler calls `internal_get_config` here and passes the `:=`'s RHS and the self-generated `StorageKey`.
+    // Compiler calls `internal_make_config` here and passes it the `:=`'s RHS and the compiler-generated `StorageKey`.
     //
     // There is no any special syntax on the RHS. It's just a regular Sway expression that can occure anywhere
     // else in Sway that creates a value of the type specified in the declaration of the LHS.
