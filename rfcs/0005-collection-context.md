@@ -391,7 +391,7 @@ these `TypeId`'s resolve in the `TypeEngine` to concrete types.
 
 From my understanding, it's impossible to do type inference on truly recursive data structures (i.e. those
 that would be of infinite size) as you need to
-[fulfill these requirements](https://papl.cs.brown.edu/2019/types.html#(part._.Recursive_.Datatype_.Definitions)).
+[fulfill these requirements](https://papl.cs.brown.edu/2020/types.html#(part._.Recursive_.Datatype_.Definitions)).
 For example:
 
 ```rust
@@ -404,7 +404,7 @@ struct Data2 {
 }
 ```
 
-In these instances, the compiler performs an [occurs check](https://papl.cs.brown.edu/2019/Type_Inference.html)
+In these instances, the compiler performs an [occurs check](https://papl.cs.brown.edu/2020/Type_Inference.html)
 to check whether the same type variable occurs on both sides and, if it does, it produces a compile error.
 
 I propose that we use an occurs check detect to recursive data structures until we fully support an equivalent
