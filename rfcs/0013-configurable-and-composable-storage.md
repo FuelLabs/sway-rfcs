@@ -83,7 +83,9 @@ The type of the LHS storage element must implement the `Storage` trait. This tra
 
 There are two classes of storage types. _Atomic storage types_ are the leafs of hierarchies of composed storage types. They cannot contain other storage types. _Compound storage types_ are storage types that contain other storage types. The standard library provides two _atomic storage types_, the [`StorageBox`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_box.sw) and the [`StorageEncodedBox`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_encoded_box.sw), as well as several compound storage types, like e.g., [`StorageVec`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_vec.sw) and [`StorageMap`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_map.sw).
 
-To store Sway types of a known size that does not contain pointers or references, the `StorageBox` is used. To store a Sway type of a dynamic size, that implements `AbiEncode` and `AbiDecode`, the `StorageEncodedBox` is used.
+Sway types that are of a known size and do not contain pointers or references will be called _serializable types_. (For a potentially better name, see the TODO-DISCUSSION comment on the top of the [`storage_box.sw`](../files/0013-configurable-and-composable-storage/sway-libs/storage/storage_box.sw).)
+
+To store serializable Sway types, the `StorageBox` is used. To store non-serializable Sway types, e.g., those of a dynamic size, that implement `AbiEncode` and `AbiDecode`, the `StorageEncodedBox` is used.
 
 ```Sway
 storage {
@@ -108,7 +110,21 @@ box_1: StorageEncodedBox<DynStruct> := DynStruct::default(),
 box_2: StorageEncodedBox<DynStruct> := DynStruct { vec: Vec::from([1, 2, 3]), txt: String::from("text") },
 ```
 
-The later usage of `storage` elements is completely the same, regardless if they are stored in a `StorageBox` or a `StorageEncodedBox`. The only difference is in the way they store their content in the background. The `StorageEncodedBox` encodes and decodes the stored values during reading and writing, using the ABI encoding, and is thus more gas and storage demanding.
+The later usage of `storage` elements is completely the same, regardless if they are stored in a `StorageBox` or a `StorageEncodedBox`. The only difference is in the way they store their content in the background. The `StorageEncodedBox` encodes and decodes the stored values during reading and writing, using the ABI encoding, and is thus more gas demanding. The storage demand, due to nature of encoding that does not store any metadata (at least in the current version of encoding), should be the same for the serializable types.
+
+Another one important property of the `StorageEncodedBox` is the compatibility guarantee, inherited from the compatibility guarantee of the encoding. If a contract wants to store data in a guaranteed future proof way, it should use the `StorageEncodedBox`, even if the stored type is storable in the `StorageBox`. `StorageBox` achieves performance by using simple memory copy of the stored data. Thus, the stored data depends on the Sway memory layout that could, although unlikely, change in the future.
+
+We expect the performance to be the default demand and, thus, advocate `StorageBox` as the default option.
+
+This is the comparison matrix of the `StorageBox` and the `StorageEncodedBox`:
+
+|   | `StorageBox` | `StorageEncodedBox` |
+| - | ------------ | ------------------- |
+| Storing serializable types | Supported. | Supported. |
+| Storing dynamic types | Not supported. | Supported. |
+| Gas cost | Minimal. Stored content is mem-copied. | High. Stored content needs to be encoded and decoded using ABI encoding. |
+| Storage cost | Minimal. Stored content is optimally packed. | Same as `StorageBox` for serializable types. Minimal for other types. |
+| Future compatibility | Not guaranteed. Stored data layout is the same as the data memory layout. | Guaranteed. The guarantee is coming from the encoding compatibility guarantee. |
 
 The possibility of the `StorageEncodedBox` to store `Vec` and other dynamic Sway types opens the question of difference between, e.g., `StorageVec<StorageBox<Struct>>` and the `StorageEncodedBox<Vec<Struct>>`. Does the `StorageEncodedBox<Vec<T>>` actually makes `StorageVec` obsolete?
 

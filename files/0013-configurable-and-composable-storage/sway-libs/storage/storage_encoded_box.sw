@@ -1,10 +1,15 @@
 /// Atomic [Storage] type that encodes the value it stores
 /// using the value's type implementation of [AbiEncode].
 ///
-/// The [StorageEncodedBox] is used for storing dynamic types
+/// [StorageEncodedBox] is used for storing dynamic types
 /// like, e.g., `Vec` or `String`, or any user-defined type that is not
 /// [core::marker::Serializable] but implements [AbiEncode]
 /// and [AbiDecode].
+///
+/// [StorageEncodedBox] can also be used for storing types
+/// that are [core::marker::Serializable]. This is primarily
+/// done to guarantee future compatibility, which is coming
+/// from the compatibility guarantees given by the encoding.
 pub struct StorageEncodedBox<T> where T: AbiEncode + AbiDecode {
     self_key: StorageKey,
 }
@@ -17,18 +22,23 @@ pub struct StorageEncodedBox<T> where T: AbiEncode + AbiDecode {
 impl<T> !Storage for StorageEncodedBox<T> where T: Storage { }
 
 //--
-// TODO-DISCUSSION: See discussion on `Serializable` in the `storage_box.sw`.
+// Since all `core::marker::Serializable` types auto-implement `AbiEncode/Decode`
+// they can always be stored both in the `StorageEncodedBox` and in the `StorageBox`.
+// We expect the `StorageBox` to be the default, because of the performance being
+// the primary demand.
+// However, if programing a contract requires future compatibility in the storage
+// access, the `StorageEncodedBox` can be used. `StorageEncodedBox` internally uses
+// encoding and thus inherits all the compatibility properties of the encoding.
+// `StorageBox`, on the other hand, just copies the memory content, whose layout,
+// although unlikely to be changed, is not guaranteed to stay the same or compatible.
+//
+// To avoid unintentional use of the `StorageEncodedBox` to store serializable types,
+// we can offer a warning in that case, explaining the performance impact.
+// The prerequisit for this warning is to have the `#[allow]` attribut implemented
+// for arbitrary warnings.
+// The warning can come from the compiler, but should ideally be part of a standardized
+// static analysis tooling coming with Sway.
 //--
-use core::marker::Serializable;
-
-//--
-// TODO-DISCUSSION: Shell we forbid encoded-boxing serializable types and thus force
-//                  them to be boxed in `StorageBox` or should this only be a compiler warning?
-//                  Essentially, if a type is `Serializable` encoding it unnecessarily
-//                  is a huge waste of computational and storage resources.
-//--
-
-impl<T> !Storage for StorageEncodedBox<T> where T: Serializable { }
 
 impl<T> Storage for StorageEncodedBox<T> where T: AbiEncode + AbiDecode {
     type Value = T;
