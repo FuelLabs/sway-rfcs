@@ -7,23 +7,57 @@
 
 [summary]: #summary
 
-This RFC intends to propose a scheme to track changes in the compiler. 
+This RFC is a guide on how to introduce breaking changes following the compiler release lifecycle.
 
 # Motivation
 
 [motivation]: #motivation
 
-The compiler needs a guide on how to introduce changes to improve developer experience every time a compiler is updated.
+To maximize user experience when updating the compiler, we need a guide on how to introduce breaking changes.
 
 # Guide-level explanation
 
 [guide-level-explanation]: #guide-level-explanation
 
+The compiler will follow a "rolling release" scheme, which means that periodically (to be specified) a
+new major version will be released.
+
+This means that as soon as the compiler reach version "1.0.0", the next **major version** will be "1.1.0"; and
+after that and if needed, the next **minor version** would be "1.1.1".
+
+The only changes that will trigger "minor updates" are:
+1 - Urgent security fixes;
+2 - Bugs that render "stable" functionality unusable;
+
 ## PR changes
 
 Every PR will have a section named "Release Notes", which will contains a user friendly explanation of what the PR contains.
+That allows the whole team to understand the impact of the change, if it contains breaking changes or not, and correctly
+configure the PR to the next major or minor update.
 
 The compiler release notes **WILL** be the amalgamation of these section "as is".
+
+## Breaking changes
+
+A breaking change is a difference in functionality from the previous version of the compiler that may require an update to sway code in order for it to compile.
+
+The following changes are defined to be breaking changes, and will need to follow the process of being gated by features flags.
+
+1 - Code without deprecated warning to be flagged as error;
+2 - ABI json properties to be removed or have their type changed;
+3 - Binary encoding that will break how SDK (and others) communicate with the compiler, that includes
+
+- How scripts/predicates accept arguments on `main`;
+- How scripts/predicates return data from `main`;
+- How the `contract method selector` is encoded;
+- How `contract method` arguments are encoded;
+- How `log` data is encoded;
+- How `message` data is encoded;
+
+  4 - Utilization of new VM opcodes;
+  5 - IR changes
+  6 - Receipt parsers to break;
+  7 - When a compiler feature or a standard library produce different behavior for the same code (semantic changes);
 
 ## Feature flags
 
@@ -33,7 +67,7 @@ Any complex change that needed to be gated will need the following steps.
 2 - A preliminary PR enabling the feature flag should be created and linked in to the umbrella issue; This PR will enable the feature flag `--experimental <comma-separated-list>` on all tools.
 3 - As many PRs will be created and merged an normal;
 4 - When the feature is ready, a closing PR will be created and wait until the feature flag is enabled by default.
-5 - On a later date, the feature flag can be removed making the feature the default behavior of the compiler. 
+5 - On a later date, the feature flag can be removed making the feature the default behavior of the compiler.
 
 # Enabling features on `sway`
 
@@ -51,7 +85,7 @@ or using the CLI
 
 These flags also need to be enabled programmatically by any compiler driver, like tests.
 
-Unlike `Rust` we will not support features inside sway code like the example below, because some features will span across multiple tools. That would demand `forc` to parse, or ask the `sway` compiler if a feature is enabled or not. 
+Unlike `Rust` we will not support features inside sway code like the example below, because some features will span across multiple tools. That would demand `forc` to parse, or ask the `sway` compiler if a feature is enabled or not.
 
 ```sway
 #![enable(some_experimental_feature)]
@@ -60,72 +94,6 @@ Unlike `Rust` we will not support features inside sway code like the example bel
 # Reference-level explanation
 
 [reference-level-explanation]: #reference-level-explanation
-
-This RFC intends to propose a scheme to track changes in the compiler. These changes will be categorized into two ways:
-
-1 - Non-breaking changes;
-2 - Breaking changes.
-
-Breaking changes will be any changes that, after updating the compiler version, causes:
-
-1 - Code without deprecated warning to be flagged as error;
-2 - ABI json properties to be removed or have their type changed;
-3 - SDK (rust, typescript and others) to break;
-4 - Receipt parsers to break;
-
-The following changes are **not** considered to be breaking changes:
-
-1 - Code flagged with deprecated warning to be flagged as error;
-2 - Code that required an experimental flag, but now are the default behavior to compile;
-3 - Contract ID to change;
-4 - new ABI json properties;
-
-## Minor Version Updates
-
-When a developer updates to a different minor version, it is expected no breaking changes, except for severe bugs.
-
-Minor changes will consider these to be breaking and non-breaking changes:
-
-### Breaking Changes 
-
-1 - If any new warning, error or other diagnostic are emitted;
-2 - If any ABI json properties are removed or have their type changed;
-3 - If any code using SDK (rust, typescript and others) stop working;
-4 - If any receipt cannot be parsed anymore;
-5 - If any "contract id" changes;
-6 - Semantic changes
-
-### Non-breaking Changes
-
-1 - new ABI json properties;
-2 - Changing one warning by another, or one error by another;
-3 - Code that was **NOT** compiling, but now is.
-
-## Major Version Updates
-
-Major update is the opportunity to introduce breaking changes, but they cannot be introduced abruptly, and depending on the change, will need to be introduced into phases.
-
-Changes that only affect the compiler/language, can be introduced freely following sway pace. Changes that interact with others tools, will need to be introduced into phases and in coordination with others tools.
-
-These changes will need to be behind "feature flags", which will be described later.
-
-### Changes can be introduced directly
-
-1 - Warning, errors and diagnostics can be changed freely;
-2 - Changes that cause "contract ids" to change;
-
-### Changes that need to be gated
-
-1 - If any ABI json properties are removed or have their type changed;
-2 - If any code using SDK (rust, typescript and others) stop working;
-3 - If any receipt cannot be parsed anymore;
-4 - Semantic changes
-
-## Exceptions for bug fixes
-
-If a bug needs to introduce a breaking change will, by default, be introduced in the next major version. If the nature of the bug demands a urgent fix, and would not be appropriated to force users to "buy" all other changes, a minor change with breaking change can be generated.
-
-# Possible changes
 
 This section contains the suggested guide on how to introduce changes into different parts of the compiler and associated tools.
 
@@ -144,8 +112,8 @@ When formatting does not depend on a flag, formatting should always format new s
 ## LSP
 
 LSP can take advantage of specific error messages, and suggest user to enable the corresponding feature.
-## TODO
 
+## TODO
 
 3 - Lexer?
 4 - Parser?
@@ -161,7 +129,7 @@ LSP can take advantage of specific error messages, and suggest user to enable th
 
 [drawbacks]: #drawbacks
 
-Why should we *not* do this?
+Why should we _not_ do this?
 
 # Rationale and alternatives
 
@@ -176,7 +144,7 @@ Why should we *not* do this?
 [prior-art]: #prior-art
 
 These are the sources and stacks used as motivation for this RFC.
- 
+
 ## How `rustc` does it
 
 https://rustc-dev-guide.rust-lang.org/implementing_new_features.html#stability-in-code
@@ -198,8 +166,19 @@ https://github.com/changesets/changesets
 
 [unresolved-questions]: #unresolved-questions
 
+Where should we save "release notes"?
+1 - In files inside the repo? - Saving in files sounds the best approach, but if we use the same file, all PRs will conflict. To avoid this we can do like `changeset` and use random names.
+2 - In github PR descriptions? - This is the easiest approach, but it can be cumbersome to recover these messages.
+3 - In git commit messages? - Given that the commit message is "created" when the PR is merged, there is no way to guarantee that "release notes" will exist or be "parseable" when we need them.
+
+Should new warnings be considered breaking changes?
+1 - Normally warnings should not be considered breaking changes, because they do not break anything.
+2 - But on the other hand, if the team treat warnings as errors, new warnings will break CIs, and demand
+developers attention. Not all fixes are trivial, and can demand bigger code changes than the user would expect
+from a minor update from the compiler.
 
 # Future possibilities
 
 [future-possibilities]: #future-possibilities
 
+`
