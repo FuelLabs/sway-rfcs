@@ -43,31 +43,29 @@ A breaking change is a difference in functionality from the previous version of 
 
 The following changes are defined to be breaking changes, and will need to follow the process of being gated by features flags.
 
-1 - Code without deprecated warning to be flagged as error;
-2 - ABI json properties to be removed or have their type changed;
-3 - Binary encoding that will break how SDK (and others) communicate with the compiler, that includes
-
-- How scripts/predicates accept arguments on `main`;
-- How scripts/predicates return data from `main`;
-- How the `contract method selector` is encoded;
-- How `contract method` arguments are encoded;
-- How `log` data is encoded;
-- How `message` data is encoded;
-
-  4 - Utilization of new VM opcodes;
-  5 - IR changes
-  6 - Receipt parsers to break;
-  7 - When a compiler feature or a standard library produce different behavior for the same code (semantic changes);
+1. Code without deprecated warning to be flagged as error;
+2. ABI json properties to be removed or have their type changed;
+3. Binary encoding that will break how SDK (and others) communicate with the compiler, that includes
+   - How scripts/predicates accept arguments on `main`;
+   - How scripts/predicates return data from `main`;
+   - How the `contract method selector` is encoded;
+   - How `contract method` arguments are encoded;
+   - How `log` data is encoded;
+   - How `message` data is encoded;
+4. Utilization of new VM opcodes;
+5. IR changes
+6. Receipt parsers to break;
+7. When a compiler feature or a standard library produce different behavior for the same code (semantic changes);
 
 ## Feature flags
 
 Any complex change that needed to be gated will need the following steps.
 
-1 - A specific github issue labeled with `feature-*` and `track-feature`. This issue should be the umbrella for everything related with this feature;
-2 - A preliminary PR enabling the feature flag should be created and linked in to the umbrella issue; This PR will enable the feature flag `--experimental <comma-separated-list>` on all tools.
-3 - As many PRs will be created and merged an normal;
-4 - When the feature is ready, a closing PR will be created and wait until the feature flag is enabled by default.
-5 - On a later date, the feature flag can be removed making the feature the default behavior of the compiler.
+1. A specific github issue labeled with `feature-*` and `track-feature`. This issue should be the umbrella for everything related with this feature;
+2. A preliminary PR enabling the feature flag should be created and linked in to the umbrella issue; This PR will enable the feature flag `--experimental <comma-separated-list>` on all tools.
+3. As many PRs will be created and merged an normal;
+4. When the feature is ready, a closing PR will be created and wait until the feature flag is enabled by default.
+5. On a later date, the feature flag can be removed making the feature the default behavior of the compiler.
 
 # Enabling features on `sway`
 
@@ -81,6 +79,12 @@ or using the CLI
 
 ```
 > forc ... --experimental some_feature,another_feature
+```
+
+or event using the environment variables
+
+```
+> FORC_EXPERIMENTAL_SOME_FEATURE forc ...
 ```
 
 These flags also need to be enabled programmatically by any compiler driver, like tests.
@@ -97,6 +101,29 @@ Unlike `Rust` we will not support features inside sway code like the example bel
 
 This section contains the suggested guide on how to introduce changes into different parts of the compiler and associated tools.
 
+## `sway-features` crate
+
+A new crate named `sway-features` will be created and will contains **ALL** features and its metadata. Best suggestion is a macro do define features where enums, documentation etc... will be generated.
+
+This macro also needs to generate code for the errors and warnings related to each error.
+
+Features will be parsed in this order:
+
+```rust
+let mut features = ExperimentalFeatures::default();
+features.parse_from_toml();
+features.parse_from_cli();
+features.parse_from_environment_variables();
+```
+
+Which means that environment variables overwrite cli arguments, which overwrite toml configuration.
+
+If a feature requires or allow new configurations, these configurations should be optional, and as soon is confirmed the feature is enabled, it should verify if the required configuration is available.
+
+```
+> forc ... --experimental a_feature --a-feature-option 1
+```
+
 ## Lexer and Parser
 
 To allow as user friendly error messages as possible, in all possible cases we want both lexer and parser to parse the new syntax even with the feature off.
@@ -105,39 +132,45 @@ After that, lexer, parser will mark that a experimental feature was lexed/parsed
 
 The error message will have a message explaining that feature is experimental and a github link for more details on the stabilization lifecycle.
 
+```rust
+// always parse new syntax
+let new_syntax = parse_new_syntax();
+if ctx.experimental.is_disabled(Features::NEW_FEATURE) {
+   handler.emit_error(...);
+}
+```
+
 ## Formatting
 
-When formatting does not depend on a flag, formatting should always format new syntax, even when the flag is off. To avoid breaking other parts of the code, or even worst, removing code.
+Formatting should always format new syntax, even when the flag is off. To avoid breaking other parts of the code, or even worst, removing code.
 
 ## LSP
 
 LSP can take advantage of specific error messages, and suggest user to enable the corresponding feature.
 
-## TODO
+## CST, AST and Typed Tree
 
-3 - Lexer?
-4 - Parser?
-5 - CST?
-6 - AST?
-7 - Typed Tree
-8 - LSP
-9 - Forc and plugins
-10 - swayfmt
-11 - New error
+All tree must always support new features, which means that new nodes will always exist. Their specific behavior, desugaring etc... will be gated by the experimental feature.
+
+More specifically, this means that variants should not be behind compiler flags.
 
 # Drawbacks
 
 [drawbacks]: #drawbacks
 
-Why should we _not_ do this?
+This will increase complexity of the compiler. Not all flags used to compile end up in the JSON ABI, or other outputs. Which can make reproducibility harder.
 
 # Rationale and alternatives
 
 [rationale-and-alternatives]: #rationale-and-alternatives
 
-- Why is this design the best in the space of possible designs?
-- What other designs have been considered and what is the rationale for not choosing them?
-- What is the impact of not doing this?
+There only two other alternatives, which we consider worst options:
+
+1. Keep experimental features in branches;
+2. Keep experimental features behind compiler flags (conditional compilation); 
+
+The first one normally creates more problems than it solves. Integration hell become a reality sooner than later.
+The second does not decrease complexity of the code, and it decreases testability of features, given that they will not be in the "release binary".
 
 # Prior art
 
@@ -149,14 +182,14 @@ These are the sources and stacks used as motivation for this RFC.
 
 https://rustc-dev-guide.rust-lang.org/implementing_new_features.html#stability-in-code
 
-1 - Open a tracking issue;
-2 - Pick a name for the feature gate;
-3,4 - Add the feature gate to the compiler code;
-5 - If the feature gate is not set, you should either maintain the pre-feature behavior or raise an error, depending on what makes sense;
-6 - Add a test to ensure the feature cannot be used without a feature gate;
-7 - Add a section to the unstable book;
-8 - Write a lot of tests for the new feature;
-9 - Get your PR reviewed and land it.
+1. - Open a tracking issue;
+2. - Pick a name for the feature gate;
+3. - Add the feature gate to the compiler code;
+4. - If the feature gate is not set, you should either maintain the pre-feature behavior or raise an error, depending on what makes sense;
+5. - Add a test to ensure the feature cannot be used without a feature gate;
+6. - Add a section to the unstable book;
+7. - Write a lot of tests for the new feature;
+8. - Get your PR reviewed and land it.
 
 ## changeset
 
@@ -167,15 +200,18 @@ https://github.com/changesets/changesets
 [unresolved-questions]: #unresolved-questions
 
 Where should we save "release notes"?
-1 - In files inside the repo? - Saving in files sounds the best approach, but if we use the same file, all PRs will conflict. To avoid this we can do like `changeset` and use random names.
-2 - In github PR descriptions? - This is the easiest approach, but it can be cumbersome to recover these messages.
-3 - In git commit messages? - Given that the commit message is "created" when the PR is merged, there is no way to guarantee that "release notes" will exist or be "parseable" when we need them.
+
+1. In files inside the repo? - Saving in files sounds the best approach, but if we use the same file, all PRs will conflict. To avoid this we can do like `changeset` and use random names.
+2. In github PR descriptions? - This is the easiest approach, but it can be cumbersome to recover these messages.
+3. In git commit messages? - Given that the commit message is "created" when the PR is merged, there is no way to guarantee that "release notes" will exist or be "parseable" when we need them.
+   - https://git-cliff.org/
 
 Should new warnings be considered breaking changes?
-1 - Normally warnings should not be considered breaking changes, because they do not break anything.
-2 - But on the other hand, if the team treat warnings as errors, new warnings will break CIs, and demand
-developers attention. Not all fixes are trivial, and can demand bigger code changes than the user would expect
-from a minor update from the compiler.
+
+1. Normally warnings should not be considered breaking changes, because they do not break anything.
+2. But on the other hand, if the team treat warnings as errors, new warnings will break CIs, and demand
+   developers attention. Not all fixes are trivial, and can demand bigger code changes than the user would expect
+   from a minor update from the compiler.
 
 # Future possibilities
 
