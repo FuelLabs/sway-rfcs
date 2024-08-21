@@ -29,13 +29,49 @@ The only changes that will trigger "minor updates" are:
 1 - Urgent security fixes;
 2 - Bugs that render "stable" functionality unusable;
 
-## PR changes
+## Release Notes
 
-Every PR will have a section named "Release Notes", which will contains a user friendly explanation of what the PR contains.
-That allows the whole team to understand the impact of the change, if it contains breaking changes or not, and correctly
-configure the PR to the next major or minor update.
+To track all "release notes" it will be create special file `ReleaseNotes.md` that will live in the repo root.
 
-The compiler release notes **WILL** be the amalgamation of these section "as is".
+When a version is being launched, for example `1.10` a new section `1.11-nightly` will be created empty. From this time on, all new PRs will create a new item under the "next version", `1.11` in this example.
+
+Each item will follow the template:
+
+```
+# Version 1.11-nightly
+
+## Forc
+
+### Breaking Changes
+### New Features
+### Bugs Fix
+### Others
+
+## Tools
+
+## Sway
+
+## `sway-lib-core` and `sway-lib-std`
+
+# Version 1.10
+
+...
+```
+
+Inside each section, items will have the following templae
+
+```
+- Index operator using Index trait [#6356](https://github.com/FuelLabs/sway/pull/6356)
+```
+
+Given that all PRs will touch this file, to avoid conflicts and decrease the experience when merging them, we will use "git custom merge driver" (see https://git-scm.com/docs/gitattributes#_defining_a_custom_merge_driver).
+
+This allows a custom merge strategy to a specific file using ".gitattributes".
+
+```
+ReleaseNotes.md merge=union
+```
+
 
 ## Breaking changes
 
