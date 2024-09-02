@@ -6,13 +6,13 @@
 
 [summary]: #summary
 
-This RFC is a guide on how to introduce breaking changes following the compiler release lifecycle.
+This RFC is a guide on how to introduce changes following the compiler release lifecycle.
 
 # Motivation
 
 [motivation]: #motivation
 
-To maximize user experience when updating the compiler, we need a guide on how to introduce breaking changes.
+To maximize user experience when updating the compiler, we need a guide on how to introduce changes.
 
 # Guide-level explanation
 
@@ -21,18 +21,19 @@ To maximize user experience when updating the compiler, we need a guide on how t
 The compiler will follow a "rolling release" scheme, which means that periodically (to be specified) a
 new major version will be released.
 
-This means that as soon as the compiler reaches version "1.0.0", the next **major version** will be "1.1.0"; and
-after that and if needed, the next **minor version** would be "1.1.1".
+This means that as soon as the compiler reaches version "1.0.0", the next **version** will be "1.1.0"; and
+after that and if needed, the next **patch** would be "1.1.1".
 
-The only changes that will trigger "minor updates" are:
-1 - Urgent security fixes;
-2 - Bugs that render "stable" functionality unusable;
+The only changes that will trigger "patches" are:
+
+1. Urgent security fixes;
+2. Fixing bugs that render "stable" functionality unusable;
 
 ## Release Notes
 
-To track all "release notes" it will be created a special file `ReleaseNotes.md` that will live in the repo root.
+To track all release notes, a special file named `ReleaseNotes.md` will be created in the repository's root directory.
 
-When a version is being launched, for example, `1.10` a new section `1.11-nightly` will be created empty. From this time on, all new PRs will create a new item under the "next version", `1.11` in this example.
+When a version is being launched, for example, `1.10` a new section `1.11-nightly` will be created empty. From this time on, all new PRs will create a new item under the "next version", `1.11-nightly` in this example.
 
 Each item will follow the template:
 
@@ -41,23 +42,31 @@ Each item will follow the template:
 
 ## Forc
 
-### Breaking Changes
-### New Features
-### Bugs Fix
-### Others
+### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
 
 ## Tools
 
+...
+
 ## Sway
 
-## `sway-lib-core` and `sway-lib-std`
+...
+
+## Standard Libraries
+
+...
 
 # Version 1.10
 
 ...
 ```
 
-Inside each section, items will have the following template
+Inside each section, items will follow the template of a user friendly one line description nad link to the PR.
 
 ```
 - Index operator using Index trait [#6356](https://github.com/FuelLabs/sway/pull/6356)
@@ -113,36 +122,54 @@ will be available, but it cannot be turned off.
 
 There are cases where conditional compilation will be needed. For these cases, each experimental feature will also have a corresponding `#[cfg(...)]`, like the example below:
 
-````sway
+```sway
 #[cfg(experimental_new_encoding = false)]
 const CONTRACT_ID = 0x14ed3cd06c2947248f69d54bfa681fe40d26267be84df7e19e253622b7921bbe;
 #[cfg(experimental_new_encoding = true)]
 const CONTRACT_ID = 0x316c03d37b53eaeffe22c2d2df50d675e2b2ee07bd8b73f852e686129aeba462;
-``
+```
 
-# Enabling features on `sway`
+# Enabling features on Sway
 
 Features can be enabled inside the `Forc.toml` file:
 
 ```toml
 experimental = ["...", "..."]
-````
+```
 
 or using the CLI
 
 ```
 > forc ... --experimental some_feature,another_feature
+> forc ... --no-experimental some_feature,another_feature
 ```
 
-or event using the environment variables
+or even using environment variables
 
 ```
-> FORC_EXPERIMENTAL_SOME_FEATURE forc ...
+> FORC_EXPERIMENTAL=some_feature,another_feature forc ...
+> FORC_NO_EXPERIMENTAL=some_feature,another_feature forc ...
+```
+
+The order matters so for example if `feature_a` is turned on on `test.toml`, it can be turned off by the CLI or by environment variables.
+
+If a feature is not turned on by `forc.toml`, it can still be turned on by the CLI and environment variables.
+
+A special token `*` will mean "all features" in the sense that all features can be turned on or turned off.
+
+```
+> forc ... --experimental *
+```
+
+This is specially useful to control what features are enabled
+
+```
+> forc .. --no-experimental * --experimental some_feature
 ```
 
 These flags also need to be enabled programmatically by any compiler driver, like tests.
 
-Unlike `Rust` we will not support features inside sway code like the example below, because some features will span across multiple tools. That would demand `forc` to parse, or ask the `sway` compiler if a feature is enabled or not.
+Unlike `Rust` we will not support features inside Sway code like the example below, because some features will span across multiple tools. That would demand `forc` to parse, or ask the Sway compiler if a feature is enabled or not.
 
 ```sway
 #![enable(some_experimental_feature)]
@@ -208,7 +235,7 @@ Formatting should always format new syntax, even when the flag is off. To avoid 
 
 ## LSP
 
-LSP can take advantage of specific error messages, and suggest user to enable the corresponding feature.
+LSP can take advantage of specific error messages, and suggest users to enable the corresponding feature.
 
 ## CST, AST and Typed Tree
 
@@ -290,6 +317,10 @@ https://rustc-dev-guide.rust-lang.org/implementing_new_features.html#stability-i
 ## changeset
 
 https://github.com/changesets/changesets
+
+## keepachangelog
+
+Changes will categorized following https://keepachangelog.com/en/1.1.0/
 
 # Unresolved questions
 
