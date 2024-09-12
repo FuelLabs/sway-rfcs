@@ -19,7 +19,7 @@ To maximize user experience when updating the compiler, we need a guide on how t
 [guide-level-explanation]: #guide-level-explanation
 
 The compiler will follow a "rolling release" scheme, which means that periodically (to be specified) a
-new major version will be released.
+new version will be released.
 
 This means that as soon as the compiler reaches version "1.0.0", the next **version** will be "1.1.0"; and
 after that and if needed, the next **patch** would be "1.1.1".
@@ -66,13 +66,13 @@ Each item will follow the template:
 ...
 ```
 
-Inside each section, items will follow the template of a user friendly one line description nad link to the PR.
+Inside each section, items will follow the template of a user friendly one line description and a link to the PR.
 
 ```
 - Index operator using Index trait [#6356](https://github.com/FuelLabs/sway/pull/6356)
 ```
 
-Given that all PRs will touch this file, to avoid conflicts and decrease the experience when merging them, we will use "git custom merge driver" (see https://git-scm.com/docs/gitattributes#_defining_a_custom_merge_driver).
+Given that all PRs will touch this file, to avoid conflicts and decrease the experience when merging them, we will use "git custom merge driver" ([https://git-scm.com/docs/gitattributes#\_defining_a_custom_merge_driver](https://git-scm.com/docs/gitattributes#_defining_a_custom_merge_driver)).
 
 This allows a custom merge strategy to a specific file using ".gitattributes".
 
@@ -82,7 +82,7 @@ ReleaseNotes.md merge=union
 
 ## Breaking changes
 
-A breaking change is a difference in functionality from the previous version of the compiler that may require an update to sway code in order for it to compile.
+A breaking change is a difference in functionality from the previous version of the compiler that may require an update to Sway code in order for it to compile.
 
 The following changes are defined to be breaking changes and will need to follow the process of being gated by feature flags.
 
@@ -95,11 +95,10 @@ The following changes are defined to be breaking changes and will need to follow
    - How `contract method` arguments are encoded;
    - How `log` data is encoded;
    - How `message` data is encoded;
-4. Utilization of new VM opcodes;
-5. IR changes
-6. Receipt parsers to break;
-7. When a compiler feature or a standard library produces different behavior for the same code (semantic changes);
-8. When `storage` is impacted. Particularly addresses.
+4. IR changes;
+5. Receipt parsers to break;
+6. When a compiler feature or a standard library produces different behavior for the same code (semantic changes);
+7. When `storage` is impacted. Particularly addresses.
 
 ## Feature flags
 
@@ -108,7 +107,7 @@ Any complex change that needs to be gated will follow these steps.
 1. A specific GitHub issue labeled with `feature-*` and `track-feature`. This issue should be the umbrella for everything related to this feature;
 2. A preliminary PR enabling the feature flag should be created and linked to the umbrella issue; This PR will enable the feature flag `--experimental <comma-separated-list>` on all tools.
 3. As many PRs will be created and merged as normal;
-4. A chapter inside `Sway Unstable book` will be created and updated as needed;
+4. A chapter inside `Sway Unstable Book` will be created and updated as needed;
 5. When the feature is ready, a closing PR will be created and wait until the feature flag is enabled by default.
 6. On a later date, the feature flag can be removed making the feature the default behavior of the compiler.
 
@@ -161,7 +160,7 @@ A special token `*` will mean "all features" in the sense that all features can 
 > forc ... --experimental *
 ```
 
-This is specially useful to control what features are enabled
+This is specially useful to control which features are enabled
 
 ```
 > forc .. --no-experimental * --experimental some_feature
@@ -192,7 +191,7 @@ This section contains the suggested guide on how to introduce changes to differe
 
 ## `sway-features` crate
 
-A new crate named `sway-features` will be created and will contain **ALL** features and their metadata. The best suggestion is a macro to define features where enums, documentation, etc... will be generated.
+A new crate named `sway-features` will be created and will contain **ALL** features and their metadata. The best suggestion is a macro to define features where enums, documentation, etc., will be generated.
 
 This macro also needs to generate code for the errors and warnings related to each error.
 
@@ -219,7 +218,7 @@ To allow as user-friendly error messages as possible, in all possible cases, we 
 
 After that, the lexer and the parser will mark that an experimental feature was lexed/parsed; and a check will guarantee that no disabled experimental was parsed.
 
-The error message will have a message explaining that the feature is experimental and a Github link for more details on the stabilization lifecycle.
+The error message will have a message explaining that the feature is experimental and a GitHub link for more details on the stabilization lifecycle.
 
 ```rust
 // always parse new syntax
@@ -237,9 +236,9 @@ Formatting should always format new syntax, even when the flag is off. To avoid 
 
 LSP can take advantage of specific error messages, and suggest users to enable the corresponding feature.
 
-## CST, AST and Typed Tree
+## CST, AST, and Typed Tree
 
-All trees must always support new features, which means that new nodes will always exist. Their specific behavior, desugaring, etc... will be gated by the experimental feature.
+All trees must always support new features, which means that new nodes will always exist. Their specific behavior, desugaring, etc., will be gated by the experimental feature.
 
 More specifically, this means that variants should not be behind compiler flags.
 
@@ -304,15 +303,15 @@ These are the sources and stacks used as motivation for this RFC.
 
 https://rustc-dev-guide.rust-lang.org/implementing_new_features.html#stability-in-code
 
-1. - Open a tracking issue;
-2. - Pick a name for the feature gate;
-3. - Add the feature gate to the compiler code;
-4. - If the feature gate is not set, you should either maintain the pre-feature behavior or raise an error, depending on what makes sense;
-5. - Add a test to ensure the feature cannot be used without a feature gate;
-6. - Add a section to the unstable book;
-7. - Write a lot of tests for the new feature;
-8. - Get your PR reviewed and land it.
-9. - Add a section to the unstable book;
+1. Open a tracking issue;
+2. Pick a name for the feature gate;
+3. Add the feature gate to the compiler code;
+4. If the feature gate is not set, you should either maintain the pre-feature behavior or raise an error, depending on what makes sense;
+5. Add a test to ensure the feature cannot be used without a feature gate;
+6. Add a section to the unstable book;
+7. Write a lot of tests for the new feature;
+8. Get your PR reviewed and land it.
+9. Add a section to the unstable book;
 
 ## changeset
 
@@ -336,7 +335,7 @@ Changes will categorized following https://keepachangelog.com/en/1.1.0/
 ## Should new warnings be considered breaking changes?
 
 1. Normally warnings should not be considered breaking changes, because they do not break anything.
-2. on the other hand, if the team treats warnings as errors, new warnings will break CIs, and demand
+2. On the other hand, if the team treats warnings as errors, new warnings will break CIs, and demand
    developers' attention. Not all fixes are trivial and can demand bigger code changes than the user would expect
    from a minor update from the compiler.
 
