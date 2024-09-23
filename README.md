@@ -14,4 +14,4 @@
 | [0010](rfcs/0010-private-modules.md)         | Private Modules         |
 | [0011](rfcs/0011-references.md)              | References              |
 | [0012](rfcs/0012-expressive-diagnostics.md)  | Expressive Diagnostics  |
-| [0012](rfcs/0013-changes-lifecycle.md)       | Changes Lifecycle       |
+| [0013](rfcs/0013-changes-lifecycle.md)       | Changes Lifecycle       |
