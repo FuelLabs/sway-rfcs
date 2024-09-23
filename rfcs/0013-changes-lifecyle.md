@@ -19,7 +19,7 @@ To maximize user experience when updating the compiler, we need a guide on how t
 [guide-level-explanation]: #guide-level-explanation
 
 The compiler will follow a "rolling release" scheme, which means that periodically (to be specified) a
-new version will be released.
+new version will be released following "semver versioning".
 
 This means that as soon as the compiler reaches version "1.0.0", the next **version** will be "1.1.0"; and
 after that and if needed, the next **patch** would be "1.1.1".
@@ -28,6 +28,8 @@ The only changes that will trigger "patches" are:
 
 1. Urgent security fixes;
 2. Fixing bugs that render "stable" functionality unusable;
+
+Major version bumps, from "1.X.X" to "2.0.0", will be reserved to major breaking changes. All other changes, those specified in this document, will follow this guide and bump only the minor version as "1.1.X" to "1.2.0".
 
 ## Release Notes
 
@@ -109,7 +111,7 @@ Any complex change that needs to be gated will follow these steps.
 3. As many PRs will be created and merged as normal;
 4. A chapter inside `Sway Unstable Book` will be created and updated as needed;
 5. When the feature is ready, a closing PR will be created and wait until the feature flag is enabled by default.
-6. On a later date, the feature flag can be removed making the feature the default behavior of the compiler.
+6. On a later date, the feature flag can be removed making the feature the default behavior of the compiler and the docs should be migrated to the stable portion of the book.
 
 Once the feature is merged into `master`, it will not be possible to "turn off" the feature. In the same sense
 that it is not possible to "turn off" a "match expression" or any other language feature.
@@ -174,7 +176,7 @@ Unlike `Rust` we will not support features inside Sway code like the example bel
 #![enable(some_experimental_feature)]
 ```
 
-## Unstable book
+## Unstable book and forc-doc
 
 The idea of an unstable book is to be a repository of documentation, decisions, or even a devlog of the feature.
 Its unstructured nature is intentional and serves the purpose of unburdening developers to keep an update and formal
@@ -182,6 +184,8 @@ documentation of a feature that will likely change.
 
 Ideally, each chapter will have a link to the GitHub issue, discussions, references and whatever else is necessary
 to allow stakeholders to give feedback on the new feature.
+
+`forc-doc` will also understand about experimental types and functions/methods. They will have special decoration in the documentation, so users know if and which features need to be enabled.
 
 # Reference-level explanation
 
@@ -254,15 +258,15 @@ needs to be configured for each configuration.
 An example is the `encoding v1` which has different inputs and outputs from `encoding v0` when testing a script
 that takes arguments.
 
-The easiest way to approach this seems to be to support multiple `test.toml` with a suffix to differentiate them.
+To support this tests, when needed, can have multiple `test.toml` with suffixes to differentiate them.
 
 ```
 test.toml
 test.feature_a.toml
 ```
 
-To avoid duplications `test.feature_a.toml` can inherit properties from `test.toml`.
-And some new properties can be created to allow the configuration of the compiler:
+To avoid duplications `test.feature_a.toml` will inherit properties from `test.toml`.
+And new properties will be created to allow the configuration of the compiler:
 
 ```
 [environment_variables]
@@ -272,8 +276,7 @@ SOME_VAR = "1"
 cli = "--experimental feature_a,feature_b"
 ```
 
-The same strategy can be used for snapshot tests. We can use multiple `snapshot.toml` and create different
-snapshots using the file suffix. So `snapshot.feature_a.toml` will generate `snapshot@feature_a.snap`.
+The same strategy will be used for snapshot tests: multiple `snapshot.toml`. So, for example, `snapshot.feature_a.toml` will generate `snapshot@feature_a.snap`.
 
 # Drawbacks
 
