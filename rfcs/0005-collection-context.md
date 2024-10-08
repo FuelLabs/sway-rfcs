@@ -11,13 +11,13 @@ With its current design, the Sway compiler faces challenges regarding how nodes 
 with one another during type checking. These include:
 
 1. Mutually recursive dependencies are not supported, and could not be supported without
-    extensive special casing.
+   extensive special casing.
 2. Recursive AST nodes are not currently supported, and could not be supported without
-    extensive special casing.
+   extensive special casing.
 3. This inhibits the introduction of recursive functions, complex application development
-    requiring circular dependencies, and more.
+   requiring circular dependencies, and more.
 4. If a user forgets to import a dependency, it is not tractable to suggest an import to
-    them at the compiler level without extensive special-casing.
+   them at the compiler level without extensive special-casing.
 
 This RFC proposes a two-themed solution to this problem. At a high level, theme one of this
 RFC is a change to the internal design of the compiler to disentangle AST transformation
@@ -26,7 +26,7 @@ context" that allows the compiler to introduce steps for graph collection and ty
 collection, in addition to type inference and type checking. All together, this allows the
 compiler to solve the issues listed above.
 
-[*prototype system*](https://github.com/emilyaherbert/declaration-engine-and-collection-context-demo/tree/master/de)
+[_prototype system_](https://github.com/emilyaherbert/declaration-engine-and-collection-context-demo/tree/master/de)
 
 # Motivation
 
@@ -182,21 +182,21 @@ The [proposed stages of the compiler](https://github.com/emilyaherbert/declarati
 
 1. parsing
 2. [AST transformation from the untyped AST to the typeable AST and graph collection](https://github.com/emilyaherbert/declaration-engine-and-collection-context-demo/blob/master/de_cc/src/semantic_analysis/graph_collection/mod.rs)
-    - insert instances of `TypeInfo` into the `TypeEngine`
-    - insert declarations into the `DeclarationEngine`
-    - create the collection context
-    - NOT evaluate types in any way
-    - NOT create constraints on types or perform type unification
-    - NOT resolve instances of custom types
+   - insert instances of `TypeInfo` into the `TypeEngine`
+   - insert declarations into the `DeclarationEngine`
+   - create the collection context
+   - NOT evaluate types in any way
+   - NOT create constraints on types or perform type unification
+   - NOT resolve instances of custom types
 3. [type collection](https://github.com/emilyaherbert/declaration-engine-and-collection-context-demo/blob/master/de_cc/src/semantic_analysis/type_collection/mod.rs)
-    - visiting all intraprocedural definitions (struct/enum/function/trait/etc declarations)
-    - resolving custom types
-    - associating type parameters with generics
-    - NOT visiting non-intraprocedural definitions (function bodies are not visited)
+   - visiting all intraprocedural definitions (struct/enum/function/trait/etc declarations)
+   - resolving custom types
+   - associating type parameters with generics
+   - NOT visiting non-intraprocedural definitions (function bodies are not visited)
 4. [type inference (+ type checking)](https://github.com/emilyaherbert/declaration-engine-and-collection-context-demo/blob/master/de_cc/src/semantic_analysis/type_inference/mod.rs)
-    - visiting all function bodies and expressions
-    - resolving custom types
-    - monomorphizing as needed
+   - visiting all function bodies and expressions
+   - resolving custom types
+   - monomorphizing as needed
 
 ## Typeable AST
 
@@ -389,10 +389,14 @@ these `TypeId`'s resolve in the `TypeEngine` to concrete types.
 
 ## Recursive Data Structures
 
+<!-- markdown-link-check-disable -->
+
 From my understanding, it's impossible to do type inference on truly recursive data structures (i.e. those
 that would be of infinite size) as you need to
-[fulfill these requirements](https://papl.cs.brown.edu/2020/types.html#(part._.Recursive_.Datatype_.Definitions)).
+[fulfill these requirements](<https://papl.cs.brown.edu/2019/types.html#(part._.Recursive_.Datatype_.Definitions)>).
 For example:
+
+<!-- markdown-link-check-enable -->
 
 ```rust
 struct Data1 {
@@ -404,8 +408,12 @@ struct Data2 {
 }
 ```
 
-In these instances, the compiler performs an [occurs check](https://papl.cs.brown.edu/2020/Type_Inference.html)
+<!-- markdown-link-check-disable -->
+
+In these instances, the compiler performs an [occurs check](https://papl.cs.brown.edu/2019/Type_Inference.html)
 to check whether the same type variable occurs on both sides and, if it does, it produces a compile error.
+
+<!-- markdown-link-check-enable -->
 
 I propose that we use an occurs check detect to recursive data structures until we fully support an equivalent
 to something like the Rust `Box` type, which would eliminate this problem.
