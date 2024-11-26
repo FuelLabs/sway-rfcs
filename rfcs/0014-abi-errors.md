@@ -370,7 +370,7 @@ that are directly returned.
 
 Using a special intrinsic is the main drawback of this solution for a number of reasons.
 
-It muddles how instrinsics are identified since unlike other compiler intrinsics
+It muddles how intrinsics are identified since unlike other compiler intrinsics
 `panic` does not have a `__` prefix. 
 This is necessary since it needs to
 be directly invoked at the error site for the location information to be
