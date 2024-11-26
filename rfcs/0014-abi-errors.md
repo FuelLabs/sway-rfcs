@@ -1,4 +1,4 @@
-- Feature Name: `abi_errors`
+- Feature Name: `error_type`
 - Start Date: 2024-11-18
 - RFC PR: [FuelLabs/sway-rfcs#43](https://github.com/FuelLabs/sway-rfcs/pull/43)
 - Sway Issue: [FueLabs/sway#0000](https://github.com/FuelLabs/sway/issues/001)
@@ -45,14 +45,14 @@ defined types and error strings don't affect the final bytecode size.
 Error types are special enums that allow developers to signal that each variant
 is associated with an error message.
 
-An error type implements the `AbiError` trait, but it is not recommended that you
+An error type implements the `Error` trait, but it is not recommended that you
 do so manually.
 
 Instead, to create a new error type, use the following syntax and annotations on
 an enum:
 
 ```sway
-#[abi_error]
+#[error_type]
 enum MyError {
   #[error("error A")]
   A: (),
@@ -61,7 +61,7 @@ enum MyError {
 }
 ```
 
-This will automatically implement the `AbiError` marker trait for this enum
+This will automatically implement the `Error` marker trait for this enum
 and let the compiler know what error messages correspond to what variants of
 the enum.
 
@@ -126,7 +126,7 @@ program:
 ```sway
 script;
 
-#[abi_error]
+#[error_type]
 enum MyError {
   #[error("error A")]
   A: (),
@@ -308,20 +308,20 @@ corresponds to error message `"error B"`.
 
 ## Error types
 
-Error types are recognized using the `AbiError` trait, but it is a simple marker
+Error types are recognized using the `Error` trait, but it is a simple marker
 that does not carry behavior (for now).
 
 ```sway
-trait AbiError: AbiEncode {}
+trait Error: AbiEncode {}
 ```
 
 We need to introduce two new annotations.
 
-`#[abi_error]` generates an implementation of `AbiError` for a given type
+`#[error_type]` generates an implementation of `Error` for a given type
 and should let the compiler know that it should carry around error message
 information about this type.
 
-`#[error("")]` should only be usable in a `#[abi_error]` marked enum definition,
+`#[error("")]` should only be usable in a `#[error_type]` marked enum definition,
 and to not exhaustively mark variants of such an enum with an error message
 annotation is considered an error.
 
@@ -335,7 +335,7 @@ The `panic` intrinsic has two modes which determine what kind of fields are
 produced in the (new) `"errorCodes"` section of the ABI file.
 
 Either it is used with a `str` literal (or a const-evaluable such value) and
-produces `"msg"` fields. Or it is used with an `AbiError` implementing type, and
+produces `"msg"` fields. Or it is used with an `Error` implementing type, and
 produces `"logId"` fields. Any other use is an error.
 
 In any valid case, it also records in the `"errorCodes"` section location
@@ -392,7 +392,7 @@ language features of this caliber.
 
 Given the benefits of having standardized errors, these trade-offs seem
 acceptable, so long as we allow the solution to be extended in the future to
-be more user defined. The `AbiError` trait is the main vector of such future
+be more user defined. The `Error` trait is the main vector of such future
 changes in this case.
 
 Letting the errors be populated directly in the bytecode would be a lot simpler,
@@ -450,7 +450,7 @@ We may also allow error strings to be format strings so that you may use your
 enum's values in the error message.
 
 Improvements to our const evaluation facilities may also prompt a rework of the
-`AbiError` trait so that the error messages are generated arbitrarily through
+`Error` trait so that the error messages are generated arbitrarily through
 a `const fn` instead of statically defined through annotations. This would also
 allow us to do away with custom annotations.
 
