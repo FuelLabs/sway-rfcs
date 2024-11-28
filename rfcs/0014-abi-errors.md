@@ -85,27 +85,28 @@ fn do_something(self) -> Result<(), MyError> {
 When encountering an irrecoverable error in a Sway program, it is customary to
 revert and produce an informative error code.
 
-The recommended way of doing this is to use the `panic` intrinsic.
+The recommended way of doing this is to use a `panic` expression.
 
-`panic` is a compiler intrinsic that will
-produce a unique revert code for each of its invocations and populate the ABI
-specification file with a list of such codes and corresponding information about
-where it was invoked and with what kind of arguments.
+`panic` a syntax element similar to `return` except it aborts the execution of the entire program.
+
+Moreover, it will produce a unique revert code for each of its invocations and
+populate the ABI specification file with a list of such codes and corresponding
+information about where it was invoked and with what kind of arguments.
 
 If all you want is an error message, you can panic with a string literal:
 
 ```sway
 // ...
 // some error happened
-panic("some error happened");
+panic "some error happened";
 ```
 
 But if you want more functionality, you should use an error type:
 
 ```sway
-panic(MyError::A);
+panic MyError::A;
 // ...
-panic(MyError::B((1024, 42)));
+panic MyError::B((1024, 42));
 ```
 
 Panicking with an error type will do two things: log the error so that a
@@ -136,12 +137,12 @@ enum MyError {
 
 pub fn main(a: u8) {
   match a {
-    0 => panic("a str panic"),
-    1 => panic("another str panic"),
-    2 => panic(MyError::A),
-    3 => panic(MyError::A),
-    4 => panic(MyError::B((1024, 42))),
-    5 => panic(MyError::B((0, 16))),
+    0 => panic "a str panic",
+    1 => panic "another str panic",
+    2 => panic MyError::A,
+    3 => panic MyError::A,
+    4 => panic MyError::B((1024, 42)),
+    5 => panic MyError::B((0, 16)),
     _ => {}
   }
 }
@@ -330,9 +331,9 @@ When generating ABI files, the compiler should populate the `"metadataTypes"`
 section accordingly and include a `"errorMessage"` field in the components of
 marked enums.
 
-## `panic` intrinsic
+## `panic` expression
 
-The `panic` intrinsic has two modes which determine what kind of fields are
+The `panic` expression has two modes which determine what kind of fields are
 produced in the (new) `"errorCodes"` section of the ABI file.
 
 Either it is used with a `str` literal (or a const-evaluable such value) and
@@ -346,6 +347,8 @@ As for runtime behavior, if the argument is an error type, it logs it before
 reverting, and in every valid case, it eventually reverts with a unique error
 code for every `panic` invocation, which is recorded in the `"errorCodes"`
 section.
+
+`panic` can be used in a expression and evalutates to `!`.
 
 ## Integration considerations
 
@@ -374,17 +377,11 @@ that are directly returned.
 
 [drawbacks]: #drawbacks
 
-Using a special intrinsic is the main drawback of this solution for a number of reasons.
+Introducing a new syntax element is the main drawback of this solution.
 
-It muddles how intrinsics are identified since unlike other compiler intrinsics
-`panic` does not have a `__` prefix. 
-This is necessary since it needs to
-be directly invoked at the error site for the location information to be
-meaningful.
+It pollutes the namespace with another reserved word.
 
-It also pollutes the namespace with yet another reserved word.
-
-And ultimately it moves more complexity to the compiler rather than let the user define it.
+It also moves more complexity to the compiler rather than let the user define it.
 This is a shared problem with the error type annotations.
 
 # Rationale and alternatives
