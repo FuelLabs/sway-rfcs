@@ -115,7 +115,7 @@ corresponds to the invocation location.
 ## Revert codes
 
 All revert codes after `0xffff_ffff_ffff_0000` are reserved for use by the
-compiler and standard library.
+compiler and the standard library.
 
 Codes produced by `panic` start at `0xffff_ffff_0000_0000` but may be allocated
 at will by the compiler, they are not guaranteed to be sequential.
@@ -321,9 +321,10 @@ We need to introduce two new annotations.
 and should let the compiler know that it should carry around error message
 information about this type.
 
-`#[error("")]` should only be usable in a `#[error_type]` marked enum definition,
-and to not exhaustively mark variants of such an enum with an error message
-annotation is considered an error.
+`#[error("")]` should only be usable in a `#[error_type]` marked enum
+definition, and to not exhaustively mark variants of such an enum with an error
+message annotation is considered an error. Using more than one `#[error("")]`
+annotation on a variant is considered an error.
 
 When generating ABI files, the compiler should populate the `"metadataTypes"`
 section accordingly and include a `"errorMessage"` field in the components of
@@ -351,10 +352,13 @@ section.
 Manual reverts with custom codes should still be available to developers, but
 discouraged.
 
-The standard library should henceforth strive to use error types for both
-recoverable and irrecoverable errors. Ideally the standard library should
+The standard library should use error types for both
+recoverable and irrecoverable errors. The standard library should
 never produce a revert code that doesn't have a corresponding documented error
 message.
+
+The existing special error codes produced by the standard library (such as
+`FAILED_ASSERT_SIGNAL`) should be migrated to use this mechanism.
 
 We should also introduce compiler warnings for manually producing revert codes
 that may conflict with either the reserved code range or the auto-generated panic
@@ -364,8 +368,6 @@ SDK integration of this feature is open ended, but we should at least aim to
 be able to use error message information to decode revert codes and error types
 that are directly returned.
 
-The existing special error codes produced by the standard library (such as `FAILED_ASSERT_SIGNAL`) should be migrated
-to use this mechanism.
 
 
 # Drawbacks
@@ -411,8 +413,8 @@ a meaningful answer. Errors are part of making this answer meaningful and it is
 typical for error messages to live in headers.
 
 If we do not specify some kind of error standard, debugging any sort of complex
-Sway error will remain extremely difficult and supporting Sway contracts may be
-a nigh impossible task.
+Sway error will remain extremely difficult and supporting Sway contracts would
+be an almost impossible task.
 
 # Prior art
 
@@ -453,4 +455,7 @@ Improvements to our const evaluation facilities may also prompt a rework of the
 `Error` trait so that the error messages are generated arbitrarily through
 a `const fn` instead of statically defined through annotations. This would also
 allow us to do away with custom annotations.
+
+We should also consider better syntax and handling for recoverable errors
+implementing `Error`, such as a `?` operator similar to Rust's.
 
