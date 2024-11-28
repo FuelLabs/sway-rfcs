@@ -15,12 +15,12 @@ language tools while keeping error strings out of on-chain artifacts.
 
 [motivation]: #motivation
 
-Currently, reverting a sway program only produces an opaque error code.
+Currently, reverting a Sway program only produces an opaque error code.
 Sometimes this code is unusual enough that with the source code of the contract
 it is possible to figure out what is going on, but a lot of the time it's a
 meaningless number that only means that some failure happened somewhere.
 
-It's not reasonable to expect people to be able to debug sway programs in these
+It's not reasonable to expect people to be able to debug Sway programs in these
 conditions, so we need to improve this.
 
 We want irrecoverable errors to carry user defined error messages and source
@@ -82,7 +82,7 @@ fn do_something(self) -> Result<(), MyError> {
 
 ## `panic`
 
-When encountering an irrecoverable error in a sway program, it is customary to
+When encountering an irrecoverable error in a Sway program, it is customary to
 revert and produce an informative error code.
 
 The recommended way of doing this is to use the `panic` intrinsic.
@@ -364,6 +364,10 @@ SDK integration of this feature is open ended, but we should at least aim to
 be able to use error message information to decode revert codes and error types
 that are directly returned.
 
+The existing special error codes produced by the standard library (such as `FAILED_ASSERT_SIGNAL`) should be migrated
+to use this mechanism.
+
+
 # Drawbacks
 
 [drawbacks]: #drawbacks
@@ -385,10 +389,10 @@ This is a shared problem with the error type annotations.
 
 [rationale-and-alternatives]: #rationale-and-alternatives
 
-Despite the drawbacks of moving more special behavior the compiler, it has to
-shoulder this complexity in Sway since we do not have sufficiently powerful
-meta-programming features such that developers may be able to define their own
-language features of this caliber.
+There are drawbacks to moving more special behavior the compiler. However, we
+do not have sufficiently powerful meta-programming features that would allow
+developers to define features of this caliber. Therefore, the language must
+shoulder the burden of this complexity.
 
 Given the benefits of having standardized errors, these trade-offs seem
 acceptable, so long as we allow the solution to be extended in the future to
@@ -431,11 +435,7 @@ minimize the footprint of errors on deployed contracts.
 
 [unresolved-questions]: #unresolved-questions
 
-It's unclear how much of the existing special error codes produced by the
-standard library (such as `FAILED_ASSERT_SIGNAL`) should be migrated to use this
-mechanism or should remain special behavior.
-
-The extent of the SDK integration of this feature is also quite open ended. But
+The extent of the SDK integration of this feature is quite open ended. But
 implementation of this should give a good enough base to decide how much support
 we want and to extend it in the future.
 
