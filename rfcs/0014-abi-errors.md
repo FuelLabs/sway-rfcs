@@ -1,7 +1,7 @@
 - Feature Name: `error_type`
 - Start Date: 2024-11-18
 - RFC PR: [FuelLabs/sway-rfcs#43](https://github.com/FuelLabs/sway-rfcs/pull/43)
-- Sway Issue: [FueLabs/sway#0000](https://github.com/FuelLabs/sway/issues/001)
+- Sway Issue: [FueLabs/sway#6765](https://github.com/FuelLabs/sway/issues/6765)
 
 # Summary
 
