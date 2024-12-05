@@ -23,7 +23,7 @@ Some types have constants, specifically unsigned integers, as their definition (
 
 A simple example would be:
 
-```sway
+```rust
 fn id<const SIZE: usize>(array: [u64; SIZE]) -> [u64; SIZE] {
     array
 }
@@ -31,7 +31,7 @@ fn id<const SIZE: usize>(array: [u64; SIZE]) -> [u64; SIZE] {
 
 This also allows `impl` items such as
 
-```sway
+```rust
 impl<const N: usize> AbiEncode for str[N] {
     ...
 }
@@ -39,60 +39,105 @@ impl<const N: usize> AbiEncode for str[N] {
 
 This constant can be infered or explicitly specified. When infered, the syntax is no different than just using the item:
 
-```sway
-    id([1u8])
+```rust
+id([1u8])
 ```
 
 In the example above, the Sway compiler will infer `SIZE` to be one, because `id` parameter will be infered to be `[u8; 1]`.
 
 For the cases where the compiler cannot infer this value, or this value comes from a expression, it is possible to do:
 
-```sway
-    id::<1>([1u8]);
-    id::<{1 + 1}>([1u8, 2u8]);
+```rust
+id::<1>([1u8]);
+id::<{1 + 1}>([1u8, 2u8]);
 ```
 
-When the value is not a literal, but an expression, it needs to enclosed by curly braces. This will fail, if the expression cannot be evaluated as `const`.
+When the value is not a literal, but an expression, it is named "const generic expression" and it needs to be enclosed by curly braces. This will fail, if the expression cannot be evaluated as `const`.
 
 # Reference-level explanation
 
 [reference-level-explanation]: #reference-level-explanation
 
-This new syntax has three forms: const generics declaration, call and reference.
+This new syntax has three forms: declarations, instantiations and references.
 
-const generics declarations can appear anywhere a generic argument declaration is valid:
+"const generics declarations" can appear anywhere all others generic arguments declarations are valid:
 
 1. Function/method declaration;
-2. Struct/Enum declaration;
-3. `impl` declarations.
+1. Struct/Enum declaration;
+1. `impl` declarations.
 
-const generics call can appears everywhere a declaration that contains a generic argument call be referenced:
+```rust
+// 1
+fn id<const N: usize>(...) { ... }
+
+// 2
+struct SpecialArray<const N: usize> {
+    inner: [u8; N],
+}
+
+//3
+impl<const N: usize> AbiEncode for str[N] {
+    ...
+}
+```
+
+"const generics instantiations" can appear anywhere all others generic argument instantiations are valid:
 
 1. Function/method reference;
 1. Struct/Enum reference;
 1. Fully qualified call paths.
 
-const generics references can appear anywhere a reference to a const variable can appear. For semantic purposes there is no difference from the reference of a const generics and a "normal" const.
+```rust
+// 1
+id::<1>([1u8]);
+special_array.do_something::<1>();
+
+// 2
+SpecialArray::<1>::new();
+
+// 3
+<SpecialArray::<1> as SpecialArrayTrait::<1>>::f();
+```
+
+"const generics references" can appear anywhere any other identifier appear. For semantic purposes there is no difference from the reference of a "const generics" and a "normal" const.
+
+```rust
+fn f<const I: usize>() {
+    __log(I);
+}
+```
 
 Different from type generics, const generics cannot appear at:
 
 1. constraints;
 1. where types are expected.
 
+```rust
+// 1 - INVALID
+fn f<const I: usize>() where I > 10 {
+    ...
+}
+
+// 2 - INVALID
+fn f<const I: usize>() -> Vec<I> {
+    Vec::<I>::new()
+}
+```
+
+## Const Value Specialization
+
 By the nature of `impl` declarations, it is possible to specialize for some specific types. For example:
 
-```sway
+```rust
 impl SomeStruct<bool> {
     fn f() {        
     }
 }
 ```
 
-## Const Value Specialization
+In the example above, `f` only is available when the generic argument of SomeStruct is know to be `bool`. This will not be supported for "const generics", which means that the example below will not be supported:
 
-In the example above, `f` only is available when the generic argument of SomeStruct is know to be bool. By the nature of const generics, Sway will not support specialization by value. This mean that the example below will not be supported:
-
-```sway
+```rust
 impl SomeIntegerStruct<1> {
     ...
 }
@@ -102,17 +147,47 @@ impl SomeBoolStruct<false> {
 }
 ```
 
-The main reason for forbidding this option is that apart from `bool`, which only needs two values, all other constants would demand complex syntax to guarantee the completeness and uniqueness of all implementations, the same way that `match` expressions do.
+The main reason for forbidding this is that apart from `bool`, which only needs two values, all other constants would demand complex syntax to guarantee the completeness and uniqueness of all implementations, the same way that `match` expressions do.
 
 ## Monomorphization
 
-As other generic arguments, `const generics` monormophize functions, which means that a new "TyFunctionDecl", for example, will be created for which value that is instantiated.
+As other generic arguments, `const generics` monormorphize functions, which means that a new "TyFunctionDecl", for example, will be created for which value that is instantiated.
+
+Prevention of code bloat will be responsability of the optimizer.
+
+# Implementation Roadmap
+
+1. Creation of the feature flag `const-generics`;
+1. Implementation of "const generics references";
+```rust
+fn f<const I: usize>() { __log(I); }
+```
+3. The compiler will be able to encode arrays of any size; That means being able to implement the following in the "core" lib and using arrays of any size as configurables;
+```rust
+impl<T, const N: usize> AbiEncode for [T; N] { ... }
+```
+4. Being able to `encode` arrays of any size;
+```rust
+fn f<T, const N: usize>(s: [T; N]) -> raw_slice {
+    <[T; N] as AbiEncode>::abi_encode(...);
+}
+f::<1>([1])
+```
+5. Inference of the example above
+```rust
+f([1]);
+core::encode([1]);
+```
+6. Struct/enum support for const generics
+7. Function/method declaration;
+8. `impl` declarations.
+9. Function/method reference;
 
 # Drawbacks
 
 [drawbacks]: #drawbacks
 
-No reasons
+None
 
 # Rationale and alternatives
 
@@ -122,12 +197,13 @@ No reasons
 
 [prior-art]: #prior-art
 
-https://doc.rust-lang.org/reference/items/generics.html#const-generics
+This RFC is partially based on Rust's own const generic system: https://doc.rust-lang.org/reference/items/generics.html#const-generics
 
 # Unresolved questions
 
 [unresolved-questions]: #unresolved-questions
 
+None
 
 # Future possibilities
 
