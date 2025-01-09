@@ -1,5 +1,5 @@
 //--
-// This module demonstrates how to implement a custome `Storage` type.
+// This module demonstrates how to implement a custom `Storage` type.
 //--
 
 pub struct StoragePair<A, B> where A: Storage, B: Storage {
@@ -103,7 +103,7 @@ impl<A, B> StoragePair<A, B> where A: Storage, B: Storage {
         A::init(&snd_element_self_key, value)
     }
 
-    /* ... Oher `StoragePair` methods. ... */
+    /* ... Other `StoragePair` methods. ... */
 }
 
 impl<A, B> DeepReadStorage for StoragePair<A, B> where A: DeepReadStorage, B: DeepReadStorage {

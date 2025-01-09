@@ -43,7 +43,7 @@ pub enum StorageLayout {
 // TODO-DISCUSSION: Should we introduce a language feature here and not rely on a naming convention hack?
 //                  E.g., a language feature for something like `pub(impl) fn`.
 //                  The naming convention solution is convenient and simple, but still bloats the list
-//                  of methods/functions availabe in a scope.
+//                  of methods/functions available in a scope.
 //--
 pub trait Storage {
     /// The type of the value that can be stored in this [Storage].
@@ -181,7 +181,7 @@ impl<TStorage> StorageRef<TStorage> where TStorage: Storage {
 
 /// A [Storage] that supports reading and retrieving its entire stored value.
 pub trait DeepReadStorage: Storage {
-    /// Returns the entired value stored in the [Storage],
+    /// Returns the entire value stored in the [Storage],
     /// or `None` if the [Storage] is uninitialized.
     ///
     /// Composable storage types usually offer specialized
@@ -195,7 +195,7 @@ pub trait DeepReadStorage: Storage {
     /// key to individual elements.
     ///
     /// Retrieving the entire stored value can require
-    /// high amout of storage reads for certain storage
+    /// high amount of storage reads for certain storage
     /// types. Therefore, this method must always be
     /// used with care and only if the entire value is
     /// actually needed.
@@ -212,13 +212,13 @@ pub trait DeepReadStorage: Storage {
 /// from the storage by uninitializing the storage slots which
 /// were occupied by the stored value.
 pub trait DeepClearStorage: Storage {
-    /// Clears the entired value stored in the [Storage].
+    /// Clears the entire value stored in the [Storage].
     ///
     /// This call always succeeds, even if the [Storage] is
     /// uninitialized.
     ///
     /// Composable storage types usually offer specialized
-    /// methods for semantically clear the stored value.
+    /// methods to semantically clear the stored value.
     /// To clear semantically means that the value will be removed
     /// from the perspective of the storage type, but the
     /// occupied storage slots will not necessarily be uninitialized.
@@ -236,7 +236,7 @@ pub trait DeepClearStorage: Storage {
     /// all of them.
     ///
     /// Clearing the entire stored value can require
-    /// high amout of storage clears for certain storage
+    /// high amount of storage clears for certain storage
     /// types. Therefore, this method must always be
     /// used with care and only if clearing the entire value is
     /// actually needed.

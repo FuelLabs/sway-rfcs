@@ -58,6 +58,6 @@ impl Demo for Contract {
         local_pair_1.first().snd().push(123);
 
         let local_pair_1_value = local_pair_1.deep_read();
-        asert_eq(local_pair_1_value, (([], [123]), ([], [])));
+        assert_eq(local_pair_1_value, (([], [123]), ([], [])));
     }
 }

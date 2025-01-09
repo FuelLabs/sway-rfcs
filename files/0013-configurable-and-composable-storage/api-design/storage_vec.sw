@@ -12,7 +12,7 @@
 impl<T> StorageVec<T> where T: Storage {
     const fn get_element_self_key(self_key: &StorageKey, element_index: u64) -> StorageKey {
         //--
-        // Calcualte the self key of the element stored at `element_index`.
+        // Calculate the self key of the element stored at `element_index`.
         // `self_key` is the self key of the [StorageVec].
         // For the sample implementation, see `sway-libs/storage/storage_vec.sw`.
         //--
@@ -63,7 +63,7 @@ impl<T> StorageVec<T> where T: Storage {
     // Same as with `push` and other methods, we treat an uninitialized
     // `StorageVec` as an empty vector.
     //
-    // The additional challange here is providing the possibility to deep clear
+    // The additional challenge here is providing the possibility to deep clear
     // the popped element. This surely requires an separate method because of
     // an additional trait constraint `T: DeepClearStorage`.
     //
@@ -79,7 +79,7 @@ impl<T> StorageVec<T> where T: Storage {
     //
     // And in the case they do appear, the guideline is to have a single distinguished
     // method with a "special behavior" that accepts additional parameters.
-    // E.g., let's say that we want to `<operation>_deep_clear` with certains checks
+    // E.g., let's say that we want to `<operation>_deep_clear` with certain checks
     // being optional. A possible method would look like:
     //
     //  fn <operation>_deep_clear(&mut self, checked: bool)
@@ -117,7 +117,7 @@ impl<T> StorageVec<T> where T: Storage {
     //
     // The important consequence of that decision, to treat an initialized vector
     // as empty is, that we do not distinguish between "technical" errors, those
-    // coming from reading uninitialized storge, and "semantic" errors, those coming
+    // coming from reading uninitialized storage, and "semantic" errors, those coming
     // from, e.g., reading out of bounds.
     //
     // This means that we will, following the guideline given above, have a

@@ -14,7 +14,7 @@ storage {
     //--
     // Compiler calls `internal_make_config` here and passes it the `:=`'s RHS and the compiler-generated `StorageKey`.
     //
-    // There is no any special syntax on the RHS. It's just a regular Sway expression that can occure anywhere
+    // There is no any special syntax on the RHS. It's just a regular Sway expression that can occur anywhere
     // else in Sway that creates a value of the type specified in the declaration of the LHS.
     //--
     //--
@@ -142,7 +142,7 @@ impl Demo for Contract {
         // E.g., `StorageVec::push` does not accept the contained storage
         // as the type but rather the value that needs to be contained.
         //
-        // This prohibits non-sensical usage like:
+        // This prohibits nonsensical usage like:
         //
         // let vec_of_vec_a = StorageVec<StorageVec<StorageBox<u6>>>::init(...);
         // let vec_of_vec_b = StorageVec<StorageVec<StorageBox<u6>>>::init(...);

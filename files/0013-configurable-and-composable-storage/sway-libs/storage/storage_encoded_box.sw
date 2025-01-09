@@ -26,7 +26,7 @@ impl<T> !Storage for StorageEncodedBox<T> where T: Storage { }
 // they can always be stored both in the `StorageEncodedBox` and in the `StorageBox`.
 // We expect the `StorageBox` to be the default, because of the performance being
 // the primary demand.
-// However, if programing a contract requires future compatibility in the storage
+// However, if programming a contract requires future compatibility in the storage
 // access, the `StorageEncodedBox` can be used. `StorageEncodedBox` internally uses
 // encoding and thus inherits all the compatibility properties of the encoding.
 // `StorageBox`, on the other hand, just copies the memory content, whose layout,
@@ -34,7 +34,7 @@ impl<T> !Storage for StorageEncodedBox<T> where T: Storage { }
 //
 // To avoid unintentional use of the `StorageEncodedBox` to store serializable types,
 // we can offer a warning in that case, explaining the performance impact.
-// The prerequisit for this warning is to have the `#[allow]` attribut implemented
+// The prerequisite for this warning is to have the `#[allow]` attribute implemented
 // for arbitrary warnings.
 // The warning can come from the compiler, but should ideally be part of a standardized
 // static analysis tooling coming with Sway.
@@ -43,7 +43,7 @@ impl<T> !Storage for StorageEncodedBox<T> where T: Storage { }
 impl<T> Storage for StorageEncodedBox<T> where T: AbiEncode + AbiDecode {
     type Value = T;
     //--
-    // The assumption is, once we get slices, `raw_slice` will dissapear. 
+    // The assumption is, once we get slices, `raw_slice` will disappear.
     // Today this would be a `StorageConfig<raw_slice>`.
     //--
     type Config = StorageConfig<[u8]>; 

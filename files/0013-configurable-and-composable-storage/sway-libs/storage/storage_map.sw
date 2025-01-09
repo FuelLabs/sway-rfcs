@@ -1,6 +1,6 @@
 //--
 // We assume here that slices will have const eval implementations for:
-//  - `[T] += [T] -> [T]`: slice contatenation.
+//  - `[T] += [T] -> [T]`: slice concatenation.
 //  - `[T] += T   -> [T]`: extending a slice with an element.
 //--
 pub struct StorageMap<K, V> where K: Hash, V: Storage {

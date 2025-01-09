@@ -65,7 +65,7 @@ impl Demo for Contract {
 
         pair_of_refs.set_first(pair_1.snd().as_ref());
 
-        let referrenced_vec = pair_of_refs.first().read().deref();
-        assert_eq(referrenced_vec.get(0).read(), 1);
+        let referenced_vec = pair_of_refs.first().read().deref();
+        assert_eq(referenced_vec.get(0).read(), 1);
     }
 }

@@ -36,7 +36,7 @@ storage {
     // For the sake of example, in the below examples we assume that the `Vec` and `String` have
     // the presented `const fn from(...)` functions implemented via the `From` trait.
     // But in general, any const eval expression that returns `Vec`, or `String`, or `DynStruct` can
-    // apear on the RHS of `:=`.
+    // appear on the RHS of `:=`.
     //--
     //--
     // The usage patterns and the capabilities of `StorageEncodedBox` are the same as the
@@ -48,7 +48,7 @@ storage {
     //--
     // `box_3` encodes (on write) and decodes (on read) the entire boxed vector of `DynStruct`!
     // When boxed as such, it is not possible to access only individual elements of the stored vector.
-    // This will be explained in the documentation, together with the hint that the inteded storage structure
+    // This will be explained in the documentation, together with the hint that the intended storage structure
     // is actually very likely the `StorageVec<StorageEncodedBox<DynStruct>>` demonstrated below.
     //--
     box_3: StorageEncodedBox<Vec<DynStruct>> := Vec::from([const_create_struct(1, "abc"), const_create_struct(2, "cdf")]),

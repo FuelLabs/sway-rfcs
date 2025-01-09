@@ -1,6 +1,6 @@
 //--
 // We assume here that slices will have const eval implementations for:
-//  - `[T] += [T] -> [T]`: slice contatenation.
+//  - `[T] += [T] -> [T]`: slice concatenation.
 //  - `[T] += T   -> [T]`: extending a slice with an element.
 //--
 pub struct StorageVec<T> where T: Storage {
@@ -118,7 +118,7 @@ impl<T> StorageVec<T> where T: Storage {
     ///
     /// To get the last element before popping it use [StorageVec::last].
     //--
-    // TODO-DISCUSSION: Should we offer a method that pops and returnes the popped value?
+    // TODO-DISCUSSION: Should we offer a method that pops and returns the popped value?
     //                  This could be achieved with a `pop_deep_read` method defined as:
     //
     //                     pub fn pop_deep_read(&mut self) -> Option<T::Value> where T: DeepReadStorage
@@ -129,7 +129,7 @@ impl<T> StorageVec<T> where T: Storage {
     //
     //                  AS in other cases we then need to offer the `try` equivalent.
     //                  E.g., `pop_try_deep_read` with a cumbersome returning type of `Option<Option<T::Value>>`.
-    //                  In that case we could successfuly pop even if the deep read fails.
+    //                  In that case we could successfully pop even if the deep read fails.
     //
     //                  The current `pop` API returns the popped value, but in a broken manner.
     //                  The gain of having that feature in the new API is questionable.
