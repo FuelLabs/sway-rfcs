@@ -13,7 +13,7 @@ Allows constant values as generic arguments.
 
 [motivation]: #motivation
 
-Some types have constants, specifically unsigned integers, as their definition (e.g. arrays and string arrays). Without const generics it is impossible to have `impl` items for all instances of these types.
+Some types have constants, specifically unsigned integers, as their definition (e.g. arrays and string arrays). Without `const generics` it is impossible to have `impl` items for all instances of these types.
 
 # Guide-level explanation
 
@@ -37,7 +37,7 @@ impl<const N: usize> AbiEncode for str[N] {
 }
 ```
 
-This constant can be infered or explicitly specified. When infered, the syntax is no different than just using the item:
+This constant can be inferred or explicitly specified. When inferred, the syntax is no different than just using the item:
 
 ```rust
 id([1u8])
@@ -45,14 +45,14 @@ id([1u8])
 
 In the example above, the Sway compiler will infer `SIZE` to be one, because `id` parameter will be infered to be `[u8; 1]`.
 
-For the cases where the compiler cannot infer this value, or this value comes from a expression, it is possible to do:
+For the cases where the compiler cannot infer this value, or this value comes from an expression, it is possible to do:
 
 ```rust
 id::<1>([1u8]);
 id::<{1 + 1}>([1u8, 2u8]);
 ```
 
-When the value is not a literal, but an expression, it is named "const generic expression" and it needs to be enclosed by curly braces. This will fail, if the expression cannot be evaluated as `const`.
+When the value is not a literal, but an expression, it is named "const generic expression" and it needs to be enclosed by curly braces. This will fail if the expression cannot be evaluated as `const`.
 
 # Reference-level explanation
 
@@ -60,7 +60,7 @@ When the value is not a literal, but an expression, it is named "const generic e
 
 This new syntax has three forms: declarations, instantiations and references.
 
-"const generics declarations" can appear anywhere all others generic arguments declarations are valid:
+"const generics declarations" can appear anywhere all other generic arguments declarations are valid:
 
 1. Function/method declaration;
 1. Struct/Enum declaration;
@@ -81,7 +81,7 @@ impl<const N: usize> AbiEncode for str[N] {
 }
 ```
 
-"const generics instantiations" can appear anywhere all others generic argument instantiations are valid:
+"const generics instantiations" can appear anywhere all other generic argument instantiations are valid:
 
 1. Function/method reference;
 1. Struct/Enum reference;
@@ -99,7 +99,7 @@ SpecialArray::<1>::new();
 <SpecialArray::<1> as SpecialArrayTrait::<1>>::f();
 ```
 
-"const generics references" can appear anywhere any other identifier appear. For semantic purposes there is no difference from the reference of a "const generics" and a "normal" const.
+"const generics references" can appear anywhere any other identifier appears. For semantic purposes, there is no difference between the reference of a "const generics" and a "normal" const.
 
 ```rust
 fn f<const I: usize>() {
@@ -131,11 +131,11 @@ By the nature of `impl` declarations, it is possible to specialize for some spec
 ```rust
 impl SomeStruct<bool> {
     fn f() {        
-    }
+ }
 }
 ```
 
-In the example above, `f` only is available when the generic argument of SomeStruct is know to be `bool`. This will not be supported for "const generics", which means that the example below will not be supported:
+In the example above, `f` only is available when the generic argument of `SomeStruct` is known to be `bool`. This will not be supported for "const generics", which means that the example below will not be supported:
 
 ```rust
 impl SomeIntegerStruct<1> {
@@ -151,9 +151,98 @@ The main reason for forbidding this is that apart from `bool`, which only needs 
 
 ## Monomorphization
 
-As other generic arguments, `const generics` monormorphize functions, which means that a new "TyFunctionDecl", for example, will be created for which value that is instantiated.
+As with other generic arguments, `const generics` monormorphize functions, which means that a new "TyFunctionDecl", for example, will be created for which value that is instantiated.
 
-Prevention of code bloat will be responsability of the optimizer.
+Prevention of code bloat will be the responsability of the optimizer.
+
+Monomorphization for const generics has one extra complexity to support arbitrary expressions it is needed to "solve" an equation. For example,
+if a variable is typed as `[u64; 1]` and a method with its `self` type as `[u64; N + 1]` is called, the monomorphization process needs to know that `N` needs to be valued as `0` and if the variable is `[u64; 2]`, `N` will be `1`.
+
+## Type Engine changes
+
+By the nature of `const generics`, it will be possible to write expressions inside types. Initially, only simple references will be
+supported, but at some point, more complex expressions will be needed, for example:
+
+```sway
+fn len<T, const N: u64>(a: [T; N]) { ... }
+
+fn bigger<const N: usize>(a: [u64; N]) -> [u64; N + 1] {
+ [0; N + 1]
+}
+```
+
+This poses the challenge of having an expression tree inside the type system. Currently `sway` already 
+has three expression trees: `Expr`, `ExpressionKind` and `TyExpressionVariant`. This demands a new one,
+given that the first two allow much more complex expressions than what `const generics` wants to support.
+
+The last one is only create after some `TypeInfo` already exist, and thus cannot be used.
+
+At the same time, the parser should be able to parse any expression and return a friendly error that such expression,
+is not supported. So the parser will parser the `const generic` expression as `ExpressionKind`, and will lower it
+to the type system expression enum. And will return a `TypeInfo::ErrorRecovery` instead of the expression.
+
+These expressions will also increase the complexity of all types related algorithms such as:
+
+1. Unification
+2. PartialEq
+3. Hash
+
+In the simplest case, it is very clear how to unify `TypeInfo::Array(..., Length::Literal(1))` and `TypeInfo::Array(..., Length::Expression("N"))`.
+But more complex cases such as `TypeInfo::Array(..., Length::Expression("N"))` and `TypeInfo::Array(..., Length::Expression("N + 1"))`, is not clear
+if these types are unifiable, equal or simply different.
+
+## Method call search algorithm
+
+When a method is called, the algorithm that searches which method is called uses the method `TraitMap::get_impls`.
+Currently, this method does an `O(1)` search to find all methods applicable to a type. For example:
+
+```sway
+impl [u64; 1] {
+ fn len_for_size_one(&self) { ... }
+}
+```
+
+would create a map with something like
+
+```
+Placeholder -> [...]
+...
+[u64; 1] -> [..., len_for_size_one,...]
+...
+```
+
+The algorithms first create a `TypeRootFilter`, which is very similar to `TypeInfo`. And uses this `enum` to search the hash table.
+After that, it "generalizes" the filter and searches for `TypeRootFilter::Placeholder`.
+
+To fully support `const generics` and `const value specialization`, the compiler will now keep generalizing the
+searched type until it hits `Placeholder`. For example, searching for `[u64; 1]` will actually search for:
+
+1. [u64; 1];
+1. [u64; Placeholder];
+1. Placeholder;
+
+The initial implementation will do this generalization only for `const generics`, but it also makes sense to 
+generalize this with other types such as `Vec<u64>`.
+
+1. Vec<u64>;
+1. Vec<Placeholder>;
+1. Placeholder;
+
+This gets more complex as the number of `generics` and `const generics` increases. For example:
+
+```sway
+struct VecWithSmallVecOptimization<T, const N: u64> { ... }
+```
+
+Searching for this type would search:
+
+1. VecWithSmallVecOptimization<u64, 1>
+1. VecWithSmallVecOptimization<Placeholder, 1>
+1. VecWithSmallVecOptimization<u64, Placeholder>
+1. VecWithSmallVecOptimization<Placeholder, Placeholder>
+1. Placeholder
+
+More research is needed to understand if this change can potentially change the semantics of any program written in `sway`.
 
 # Implementation Roadmap
 
@@ -162,14 +251,14 @@ Prevention of code bloat will be responsability of the optimizer.
 ```rust
 fn f<const I: usize>() { __log(I); }
 ```
-3. The compiler will be able to encode arrays of any size; That means being able to implement the following in the "core" lib and using arrays of any size as configurables;
+3. The compiler will be able to encode arrays of any size; Which means being able to implement the following in the "core" lib and using arrays of any size as "configurables";
 ```rust
 impl<T, const N: usize> AbiEncode for [T; N] { ... }
 ```
 4. Being able to `encode` arrays of any size;
 ```rust
 fn f<T, const N: usize>(s: [T; N]) -> raw_slice {
-    <[T; N] as AbiEncode>::abi_encode(...);
+ <[T; N] as AbiEncode>::abi_encode(...);
 }
 f::<1>([1])
 ```
@@ -203,7 +292,7 @@ This RFC is partially based on Rust's own const generic system: https://doc.rust
 
 [unresolved-questions]: #unresolved-questions
 
-None
+1. What is the impact of changing the "method called algorithm"?
 
 # Future possibilities
 
