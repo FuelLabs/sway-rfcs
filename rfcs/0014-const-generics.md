@@ -173,13 +173,13 @@ fn bigger<const N: usize>(a: [u64; N]) -> [u64; N + 1] {
 
 This poses the challenge of having an expression tree inside the type system. Currently `sway` already 
 has three expression trees: `Expr`, `ExpressionKind` and `TyExpressionVariant`. This demands a new one,
-given that the first two allow much more complex expressions than what `const generics` wants to support.
-
-The last one is only create after some `TypeInfo` already exist, and thus cannot be used.
+given that the first two allow much more complex expressions than what `const generics` wants to support; 
+and  last one is only create after some `TypeInfo` already exist, and thus cannot be used.
 
 At the same time, the parser should be able to parse any expression and return a friendly error that such expression,
-is not supported. So the parser will parser the `const generic` expression as `ExpressionKind`, and will lower it
-to the type system expression enum. And will return a `TypeInfo::ErrorRecovery` instead of the expression.
+is not supported. 
+
+So, in case of a unsupported expression the parser will parser the `const generic` expression as it does for normal `Expr`and will lower it to the type system expression enum, but in the place of the unsupported expression will return a `TypeInfo::ErrorRecovery`.
 
 These expressions will also increase the complexity of all types related algorithms such as:
 
@@ -224,8 +224,8 @@ searched type until it hits `Placeholder`. For example, searching for `[u64; 1]`
 The initial implementation will do this generalization only for `const generics`, but it also makes sense to 
 generalize this with other types such as `Vec<u64>`.
 
-1. Vec<u64>;
-1. Vec<Placeholder>;
+1. Vec\<u64>;
+1. Vec\<Placeholder>;
 1. Placeholder;
 
 This gets more complex as the number of `generics` and `const generics` increases. For example:
@@ -236,10 +236,10 @@ struct VecWithSmallVecOptimization<T, const N: u64> { ... }
 
 Searching for this type would search:
 
-1. VecWithSmallVecOptimization<u64, 1>
-1. VecWithSmallVecOptimization<Placeholder, 1>
-1. VecWithSmallVecOptimization<u64, Placeholder>
-1. VecWithSmallVecOptimization<Placeholder, Placeholder>
+1. VecWithSmallVecOptimization\<u64, 1>
+1. VecWithSmallVecOptimization\<Placeholder, 1>
+1. VecWithSmallVecOptimization\<u64, Placeholder>
+1. VecWithSmallVecOptimization\<Placeholder, Placeholder>
 1. Placeholder
 
 More research is needed to understand if this change can potentially change the semantics of any program written in `sway`.
@@ -286,7 +286,7 @@ None
 
 [prior-art]: #prior-art
 
-This RFC is partially based on Rust's own const generic system: https://doc.rust-lang.org/reference/items/generics.html#const-generics
+This RFC is partially based on Rust's own const generic system: https://doc.rust-lang.org/reference/items/generics.html#const-generics, https://blog.rust-lang.org/inside-rust/2021/09/06/Splitting-const-generics.html, https://rust-lang.github.io/rfcs/2000-const-generics.html, https://doc.rust-lang.org/beta/unstable-book/language-features/generic-const-exprs.html
 
 # Unresolved questions
 
@@ -297,5 +297,3 @@ This RFC is partially based on Rust's own const generic system: https://doc.rust
 # Future possibilities
 
 [future-possibilities]: #future-possibilities
-
-Sway does not have a distinction between `const` and `non-const` functions. Which means that we will need to deny function calls in `const generics expressions`, or we will need to evaluate them and fail when they are not `const`. This can impact compilation time.
