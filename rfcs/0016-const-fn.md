@@ -1,6 +1,6 @@
 - Feature Name: `const_fn`
 - Start Date: 2025-02-26
-- RFC PR: 
+- RFC PR: [FuelLabs/sway-rfcs#44](https://github.com/FuelLabs/sway-rfcs/pull/44)
 - Sway Issue: [FueLabs/sway#5907](https://github.com/FuelLabs/sway/issues/5907)
 
 # Summary
@@ -244,8 +244,6 @@ variable that is generated during the const evaluation.
 
 When a `const fn` is called with the same arguments in different places a unique
 data section const entry should be used.
-
-## Changes in Core and Std Libraries
 
 # Prior art
 
