@@ -23,7 +23,7 @@ expressions. Const fn are a backbone of the storage initializations.
 
 [guide-level-explanation]: #guide-level-explanation
 
-### What is `const fn`?
+## What is `const fn`?
 A `const fn` is a function that can be evaluated at compile time. This allows
 its results to be used in constant contexts such as `const` variables.
 
@@ -35,8 +35,65 @@ const fn add(x: u32, y: u32) -> u32 {
 const SUM: u32 = add(3, 4);
 ```
 
-### `const fn` methods
-`const fn` should be able to be declared inside trait and impl block.
+## Const context
+
+A constant context is any place in the code where only constant values and
+computations are allowed at compile time. These contexts require values that
+can be fully determined by the compiler without executing any runtime code.
+
+### Where do constant contexts occur?
+
+#### 1. Constant Items
+
+Constants must be initialized with a compile-time evaluable expression.
+
+```sway
+const SIZE: u64 = 1024;
+const DOUBLE_SIZE: u64 = SIZE * 2; // Constant context
+```
+
+#### 2. Storage initialization
+
+Values assigned to storage slots must be known at compile time.
+
+```sway
+storage {
+    total_supply: u64 = 0, // Constant context
+}
+```
+
+The `in` keyword expects also a compile time evaluable expression.
+
+```sway
+const HASH_KEY: b256 = 0x7616e5793ef977b22465f0c843bcad56155c4369245f347bcc8a61edb08b7645;
+storage {
+    current_owners in HASH_KEY: u64 = 0,
+}
+```
+
+#### 3. Configurable initialization
+
+Values assigned to configurable must be known at compile time.
+
+```sway
+configurable {
+    DECIMALS: u8 = 9u8,
+}
+```
+
+#### 4. Inside const fn
+
+Within a const fn, all expressions must be evaluable at compile time.
+
+```sway
+const fn square(x: u32) -> u32 {
+    x * x // Constant context
+}
+```
+
+## `const fn` methods
+
+`const fn` can be declared inside trait and impl block.
 
 ```sway
 trait MyTrait {
@@ -58,7 +115,8 @@ impl MyStruct {
 }
 ```
 
-### Calling other `const fn`
+## Calling other `const fn`
+
 It is possible to call other `const fn` from another `const fn`, and non `const fn`
 cannot be called from `const fn`.
 
@@ -74,8 +132,9 @@ const fn add(x: u32, y: u32) -> u32 {
 const SUM: u32 = add(3, 4);
 ```
 
-### Generic `const fn`
-`const fn` should support generic parameters.
+## Generic `const fn`
+
+`const fn` supports generic parameters.
 
 ```sway
 trait Eq {
@@ -94,54 +153,6 @@ fn eq<T>(x: T, y: T) -> bool where T:Eq {
 
 const EQUAL: bool = eq(3u64, 4u64);
 ```
-## Const in binary data section
-
-## Heap types
-
-Heap types are a challenge for `const fn` for multiple reasons.
-First is the how to map the binary data section entry for a Heap type to the heap.
-Another challenge is that to properly use heap types such as `Vec<T>` we want to
-support methods such as: `fn push(ref mut self, value: T)`, and this would require
- `const fn`s to support `ref mut` parameters.
-Changing `Vec::<T>::push` to be a `const fn` would also imply that the instance of
- `Vec<T>` should only be used inside a `const fn` because `const fn` do not exist
-  at runtime.
-
-As heap types created in the binary data section require additional effort to be 
-used at runtime and in small cases this would offset the time required to recompute 
-them. It would be better to disallow `const fn` from returning or receiving Heap 
-types but still allow them to use Heap types inside the `const fn` code blocks.
-
-Thus we propose to not try to serialize and deserialize the heap types in the 
-binary data section instead throw warning or errors when Sway code has
-`const fn`'s that return Heap types.
-
-## `constexpr fn`
-
-C++ actually has a way of having a function that can be both used in const
- evaluation and that can also be used at runtime.
-They do that by having the keyword `constexpr` before functions
- declarations that can be run both at runtime and at compile time.
-And `consteval` to make sure that a function is evaluated only at
- compile time and does not exists at runtime, this would be the equivalent of `const fn`.
-
-Thus one possibility is Sway also having `constexpr` so that `const fn`
- can also use functions that would otherwise only be executable at runtime.
-
-Using `constexpr` in the existing functions of our existing libraries
-would empower us to quickly reuse types both in `const fn` and runtime functions.     
-
-## `ref mut` parameters
-
-Support of `ref mut` in `constexpr fn`s would be a requirement for properly
-handling heap type such as `Vec<T>` and function such as `fn push(ref mut self, value: T)`.
-But we do not want to support `ref mut` in `const fn` as it does not make
-sense to modify some variable that exists at runtime using something that executes at compile time.
-
-## Restrictions in `const fn` and `constexpr fn`
-
-    - No access to storage
-    - Cannot use certain asm opcodes
 
 # Reference-level explanation
 
@@ -152,6 +163,47 @@ sense to modify some variable that exists at runtime using something that execut
 Parsing needs to be changed so keyword `const` or `constexpr` can be used before
 all the places the keyword `fn` is used.
 This includes `fn`s in function, trait and impls.
+
+## When are `const fn`s const-evaluated vs. downgraded to runtime?
+
+A `const fn` can be evaluated at compile time under certain conditions, but in
+other cases, it may be downgraded to runtime execution. This depends on where
+and how the function is called.
+
+### When is a `const fn` const-evaluated?
+
+A `const fn` is evaluated at compile time only if it is used in a constant context,
+meaning its result must be known during compilation. This happens in:
+
+- Constant items
+- Configurable initialization
+- Storage initialization
+
+When a `const fn` is called in a regular function and the `const fn` parameters are
+known at compile time then the `const fn` can be evaluated at compile time.
+
+```
+fn main() {
+    let a = add(10, 20); // Evaluated at compile time
+}
+```
+### When is a `const fn` downgraded to runtime execution?
+
+A `const fn` is executed at runtime when it is called in a normal function or an
+expression that does not require compile-time evaluation.
+
+When a `const fn` is called in a regular function and the `const fn` parameters are not
+known at compile time then the `const fn` also needs to be called at compile time.
+
+```
+fn main() {
+    let mut x = 0;
+    while x < 20 {
+        let a = add(x, x); // Downgraded to runtime execution
+        x += 1;
+    }
+}
+```
 
 ## Evaluation
 
@@ -235,12 +287,76 @@ Thus the overhead for doing `const fn` evaluation with the VM should be around
 **tens of milliseconds**, which is negligible compared to compiling a program
 with std which takes around 2.5 seconds.
 
+## Enforcing constness rules
+
+To ensure that `const fn`s maintain predictable compile-time behavior, we enforce a set of constness rules that restrict what can and cannot be done inside a `const fn`. These rules prevent operations that rely on runtime state while allowing deterministic computation at compile time.
+
+- No access to storage
+- Cannot use certain asm opcodes
+- Error out when `const context` is assigned to a heap type.
+
+### Non usable asm opcodes
+
+The same opcodes that are disallowed to predicates are also disallowed in const fn:
+
+- BAL
+- BHEI
+- BHSH
+- BURN
+- CALL
+- CB
+- CCP
+- CROO
+- CSIZ
+- GM
+- LOG
+- LOGD
+- MINT
+- RETD
+- SMO
+- SRW
+- SRWQ
+- SWW
+- SWWQ
+- TIME
+- TR
+- TRO
+
+### Heap types
+
+Heap types are a challenge for `const fn` for multiple reasons.
+First is the how to map the binary data section entry for a Heap type to the heap.
+Another challenge is that to properly use heap types such as `Vec<T>` we want to
+support methods such as: `fn push(ref mut self, value: T)`, and this would require
+ `const fn`s to support `ref mut` parameters.
+
+As heap types created in the binary data section would require additional effort to be 
+used at runtime and in small cases this would offset the time required to recompute 
+them. It would be better to disallow `const fn` from returning or receiving Heap 
+types but still allow them to use Heap types inside the `const fn` code blocks.
+
+Thus we propose to not try to serialize and deserialize the heap types in the 
+binary data section instead throw warnings or errors when the compiler tries to store
+the result of a const evaluation in the binary data section.
+
+This allows `const fn`s to use heap types internally but restricts types in the data
+sections to non heap types.
+
+### `ref mut` parameters
+
+Support of `ref mut` in `const fn` is a requirement for properly
+handling heap type such as `Vec<T>` and function such as `fn push(ref mut self, value: T)`.
+
+A `const fn` with a `ref mut` parameters is callable inside other regular and `const fn`s but
+cannot be used directly in other `const contexts` such as constant items.
+
 ## Final binary
 
-The final binary outputted by the compiler won't have any opcodes related to the
-computation of `const fn`s. All the `const fn`s results will reside in the binary
-data section. `const fn` calls will be replaced by using the respective const
-variable that is generated during the const evaluation.
+When a `const fn`is not called at runtime the final binary outputted by the compiler
+won't have any opcodes related to the computation of `const fn`s.
+
+All the `const fn`s results reside in the binary data section. `const fn` calls are
+replaced by the respective const variable that is generated during the const evaluation.
 
 When a `const fn` is called with the same arguments in different places a unique
 data section const entry should be used.
@@ -248,6 +364,8 @@ data section const entry should be used.
 # Prior art
 
 [prior-art]: #prior-art
+
+## Rust
 
 Rust currently utilizes Miri, an interpreter for MIR (Mid-level Intermediate
 Representation), to evaluate const fn at compile time. Miri allows Rust to
@@ -261,6 +379,16 @@ Miri is used to:
 
 While Miri provides a robust foundation, its interpretation speed and limitations
 in heap allocations pose challenges for extending const fn capabilities.
+
+## C++
+
+C++ has a way of having a function that can be both used in const
+ evaluation and that can also be used at runtime.
+They do that by having the keyword `constexpr` before functions
+ declarations that can be run both at runtime and at compile time, this is the equivalent of
+`const fn` in Rust.
+And `consteval` to make sure that a function is evaluated only at
+ compile time and does not exists at runtime, which has no equivalent in Rust or this proposal.
 
 # Future possibilities
 
