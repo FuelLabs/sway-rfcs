@@ -307,7 +307,7 @@ To ensure that `const fn`s maintain predictable compile-time behavior, we enforc
 
 - No access to storage
 - Cannot use certain asm opcodes
-- Error out when `const context` is assigned to a heap type.
+- Error out when `const context` is assigned to a type with pointers or references.
 
 ### Non usable asm opcodes
 
@@ -336,30 +336,24 @@ The same opcodes that are disallowed to predicates are also disallowed in const 
 - TR
 - TRO
 
-### Heap types
+### Types with pointers or references
 
-Heap types are a challenge for `const fn` for multiple reasons.
-First is the how to map the binary data section entry for a Heap type to the heap.
-Another challenge is that to properly use heap types such as `Vec<T>` we want to
-support methods such as: `fn push(ref mut self, value: T)`, and this would require
- `const fn`s to support `ref mut` parameters.
+Types with pointers or references are a challenge for `const fn` for multiple reasons.
 
-As heap types created in the binary data section would require additional effort to be 
-used at runtime and in small cases this would offset the time required to recompute 
-them. It would be better to disallow `const fn` from returning or receiving Heap 
-types but still allow them to use Heap types inside the `const fn` code blocks.
+Types with pointers or references created in the binary data section would require additional effort to be 
+used at runtime and in small cases this would offset the time required to recompute them.
 
-Thus we propose to not try to serialize and deserialize the heap types in the 
-binary data section instead throw warnings or errors when the compiler tries to store
-the result of a const evaluation in the binary data section.
+Thus we propose to not try to serialize and deserialize the types with pointers or references in the 
+binary data section instead throw errors when the compiler tries to store
+the result of a types with pointers or references in the binary data section.
 
-This allows `const fn`s to use heap types internally but restricts types in the data
-sections to non heap types.
+This allows `const fn`s to use types with pointers or references internally but restricts types in the data
+sections to types without pointers or references.
 
 ### `ref mut` parameters
 
 Support of `ref mut` in `const fn` is a requirement for properly
-handling heap type such as `Vec<T>` and function such as `fn push(ref mut self, value: T)`.
+handling types such as `Vec<T>` and function such as `fn push(ref mut self, value: T)`.
 
 A `const fn` with a `ref mut` parameters is callable inside other regular and `const fn`s but
 cannot be used directly in other `const contexts` such as constant items.
