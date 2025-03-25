@@ -152,16 +152,16 @@ const SUM: u32 = add(3, 4);
 
 ```sway
 trait Eq {
-    fn eq(self, y:Self) -> bool;
+    const fn eq(self, y:Self) -> bool;
 }
 
 impl Eq for u64 {
-    fn eq(self, y:Self) -> bool {
+    const fn eq(self, y:Self) -> bool {
         self == y
     }
 }
 
-fn eq<T>(x: T, y: T) -> bool where T:Eq {
+const fn eq<T>(x: T, y: T) -> bool where T:Eq {
     x.eq(y)
 }
 
