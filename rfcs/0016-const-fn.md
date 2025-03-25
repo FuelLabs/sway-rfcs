@@ -91,6 +91,20 @@ const fn square(x: u32) -> u32 {
 }
 ```
 
+#### 5. Array size
+
+The array size is a constant context, the expression must be evaluable at compile time.
+
+```sway
+let a = [0u8; N + 1]; // N + 1 is in a constant context
+```
+
+Likewise `str` arrays size is also a constant context:
+
+```sway
+let a: str[N + 1] = "abc"; // N + 1 is in a constant context
+```
+
 ## `const fn` methods
 
 `const fn` can be declared inside trait and impl block.
