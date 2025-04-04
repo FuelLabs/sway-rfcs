@@ -15,3 +15,5 @@
 | [0011](rfcs/0011-references.md)              | References              |
 | [0012](rfcs/0012-expressive-diagnostics.md)  | Expressive Diagnostics  |
 | [0013](rfcs/0013-changes-lifecycle.md)       | Changes Lifecycle       |
+| [0014](rfcs/0014-abi-errors.md)              | Abi Errors              |
+| [0015](rfcs/0015-const-generics.md)          | Const Generics          |
