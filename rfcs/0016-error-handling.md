@@ -84,7 +84,7 @@ if !<some check> {
 
 will result in the error message not being stored on-chain.
 
-## Error handling in Sway tests
+## Error handling in Sway tests and SDKs
 
 `forc test` will have first-class support for ABI errors and `panic` expression. For every revert caused by `panic`king, it will show the package, file location, error message, and the logged error value if available.
 
@@ -126,6 +126,8 @@ The `#[test]` attribute will be extended with additional arguments, to enhance a
 - `should_panic` (without values) will assert if the test reverts with a compiler generated revert code. The difference between the existing `should_revert` and `should_panic` is, that the former can assert _any_ revert and can specify the expected revert id, while the latter can only assert that the revert code was compiler generated (>= 0xffff_ffff_0000_0000).
 - `panic_msg = "<regex>"` asserts that the error message related to the `panic`king matches the provided `regex`,
 - `panic_value = "<regex>"` asserts that the logged error value related to the `panic`king matches the provided `regex`. The values will be displayed as decoded logs are currently displayed. The `regex` must match the displayed representation. E.g., if the logged error value is `MyEnumVariant(MyStruct { x: 42 })` we can assert it with any of the following regexes, depending on the required strictness: `42`, `x..42`, `MyStruct.*x.*42`.
+
+Similarly, the SDKs will recognize reverts coming from `panic`king and display their ABI error information accordingly.
 
 # Reference-level explanation
 
