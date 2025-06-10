@@ -54,9 +54,9 @@ an enum:
 ```sway
 #[error_type]
 enum MyError {
-  #[error("error A")]
+  #[error(m = "error A")]
   A: (),
-  #[error("error B")]
+  #[error(m = "error B")]
   B: (u64, u8),
 }
 ```
