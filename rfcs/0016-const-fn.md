@@ -272,27 +272,38 @@ fn sub(x:u64, y:u64) -> u64 {
     x - y
 }
 
-fn main() {
+fn __entry() {
+    ...
+}
+
+fn __const_entry() {
     let A = add(1,2);
     let B = sub(A, 2);
 
-    let A_ptr = __addr_of(&A);
-    let A_size = __size_of_val(A);
-
-    let B_ptr = __addr_of(&B);
-    let B_size = __size_of_val(B);
-
-    __log(raw_slice::from_parts::<u8>(A_ptr, A_size)); // Outputs const A value
-    __log(raw_slice::from_parts::<u8>(B_ptr, B_size)); // Outputs const B value
+    __const_evaluated(0, __addr_of(A));
+    __const_evaluated(1, __addr_of(B));
 }
 ```
 
-All the const evaluated values for the original program are returned using log.
+The whole program will be compiled into IR just once, and will contain both the real
+`__entry` and the `__const_entry`.
 
-The returned log data contains a `Vec<u8>` obtained by using the ABIEncode.
+For the first time `DCE` will run with `__const_entry` as root. Eliminating everything
+that is not needed for the constant evalutation.
 
-Using VM evaluation we can store the generated ABIEncoded byte array into the
-final bytecode of the program.
+This optimized IR will be compiled and run inside the VM. Each constant will be notified
+using the intrinsics `__const_evaluated` which will notify the compiler using an `ecal`.
+
+Compiler will then run a `compacting mark and sweep` algorithm using the calculated consts
+as root. All `marked` memory will then be compressed, and all surviving pointers will be updated.
+
+After that all the survived memory will end up in the `data section` of the binary, and constants
+will be just pointers to this new memory.
+
+This will be "impossible"  to be done with `raw_ptr` and `raw_slice` and types are not 
+defined, and so the compiler will not be able to `mark` all the necessary memory.
+
+### VM evaluation performance
 
 To compile the example above it takes 0.76 seconds including core, without core
 it takes less than 0.02 seconds to compile. To bootstrap the VM and run the
@@ -300,6 +311,15 @@ script it takes less than a millisecond.
 Thus the overhead for doing `const fn` evaluation with the VM should be around
 **tens of milliseconds**, which is negligible compared to compiling a program
 with std which takes around 2.5 seconds.
+
+## Configurables
+
+Today configurables do through ABIEncode/AbiDecode pass. Which not only increase
+the final binary size, but also imposes a gas cost for the mere presence of configurables,
+even when they are not used.
+
+This new approach has the potencial to make `const` and `configurables` initialization really
+zero cost.
 
 ## Enforcing constness rules
 
@@ -388,6 +408,40 @@ Miri is used to:
 While Miri provides a robust foundation, its interpretation speed and limitations
 in heap allocations pose challenges for extending const fn capabilities.
 
+Rust does not allow allocations when running const contexts, so the following code does not compile.
+
+```rust
+static V: Vec<u8> = init();
+
+const fn init() -> Vec<u8> {
+    vec![1]
+}
+
+fn main() {
+    println!("{:?}", V);
+}
+```
+
+fails with:
+
+```
+error[E0010]: allocations are not allowed in constant functions
+ --> <source>:4:5
+  |
+4 |     vec![1]
+  |     ^^^^^^^ allocation not allowed in constant functions
+  |
+  = note: th
+```
+
+This means Rust forbids even if `const fn` does not return the `Vec`.
+
+```rust
+const fn init() -> u64 {
+    vec![1].len() as u64
+}
+```
+
 ## C++
 
 C++ has a way of having a function that can be both used in const
@@ -397,6 +451,53 @@ They do that by having the keyword `constexpr` before functions
 `const fn` in Rust.
 And `consteval` to make sure that a function is evaluated only at
  compile time and does not exists at runtime, which has no equivalent in Rust or this proposal.
+
+C++ does not allow "pointers", or memory allocation leak into runtime. It does this requiring that
+all allocated memory be deallocated inside each const context.
+
+```c++
+constexpr auto g() {
+  return std::make_unique<int>(42);
+}
+static_assert(*g() == 42); // OK
+constexpr int i = *g(); // OK
+constexpr bool gt = (g() != nullptr); // OK
+constexpr auto p = g(); // Error!
+```
+
+The code below is more explicit in this limitation
+
+```c++
+constexpr int f() {
+    auto a = new int();
+    return 1;
+}
+```
+
+and it fails with:
+
+```c++
+<source>:5:22: error: 'f()' is not a constant expression because allocated storage has not been deallocated
+    5 |     auto a = new int();
+      |                      ^
+```
+
+This means that `std::string` and `std::vector` cannot be used directly as in
+
+```c++
+void f() {
+    constexpr std::string S = "Some long enough string will fail";
+}
+```
+
+and it will fails with:
+
+```
+/opt/compiler-explorer/gcc-15.1.0/include/c++/15.1.0/bits/allocator.h: In function 'void f()':
+/opt/compiler-explorer/gcc-15.1.0/include/c++/15.1.0/bits/allocator.h:200:52: error: 'std::__cxx11::basic_string<char>(((const char*)"Some long enough string will fail"), std::allocator<char>())' is not a constant expression because it refers to a result of 'operator new'
+  200 |             return static_cast<_Tp*>(::operator new(__n));
+      |                                      ~~~~~~~~~~~~~~^~~~~
+```
 
 # Future possibilities
 
