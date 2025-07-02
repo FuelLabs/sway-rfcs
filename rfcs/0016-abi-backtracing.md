@@ -1,7 +1,7 @@
 - Feature Name: `abi_backtracing`
 - Start Date: 2025-07-03
-- RFC PR: [FuelLabs/sway-rfcs#0000](https://github.com/FuelLabs/sway-rfcs/pull/0000)
-- Sway Issue: [FueLabs/sway#0000](https://github.com/FuelLabs/sway/issues/0000)
+- RFC PR: [FuelLabs/sway-rfcs#0000](https://github.com/FuelLabs/sway-rfcs/pull/001)
+- Sway Issue: [FueLabs/sway#0000](https://github.com/FuelLabs/sway/issues/001)
 
 # Summary
 
@@ -154,7 +154,7 @@ The initial IR of that contract contains _57 reverts_ and _2542 function calls_.
 
 Those 2542 function calls call 214 unique functions. Some of those functions could panic, and thus their calls could be _panicking calls_. We are interested in the number of panicking calls in general, since we want to trace all of them in default `debug` builds, and in those coming from guards like `require` or functions like `Option::unwrap`, which we want to trace in default `release` builds. The latter we expect to be annotated with `#[trace(always)]` and to be the only traceable functions in `release` builds.
 
-The statistics of those calls can be found in the [/files/0016-spark_orderbook_spark_market_function_calls_counted.csv](/files/0016-spark_orderbook_spark_market_function_calls_counted.csv) file. That statistics reveals the following:
+The statistics of those calls can be found in the `/files/0016-spark_orderbook_spark_market_function_calls_counted.csv` file. That statistics reveals the following:
 - there are 585 potential _panicking calls_ in general,
 - out of which, there are 158 potential `#[trace(always)]` _panicking calls_.
 
