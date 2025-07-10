@@ -140,7 +140,7 @@ The fundamental assumptions and the mechanics of such backtracing is explained i
 
 ## Expected number of panic expressions and panicking calls
 
-First we introduce a notion of a _panicking call_. A _panicking call_ is a function call that _might_ result in panicking. Note that we are talking strictly about panicking, and not reverting in general, because both ABI Errors and ABI Backtracking relies on the `panic` expression.
+First we introduce a notion of a _panicking call_. A _panicking call_ is a function call that _might_ result in panicking. Note that we are talking strictly about panicking, and not reverting in general, because both ABI Errors and ABI Backtracking rely on the `panic` expression.
 
 A function call might result in panicking if the called function, or any of the functions it internally calls, contains at least one `panic` expression.
 
@@ -158,7 +158,7 @@ The statistics of those calls can be found in the `/files/0016-spark_orderbook_s
 - there are 585 potential _panicking calls_ in general,
 - out of which, there are 158 potential `#[trace(always)]` _panicking calls_.
 
-Although these numbers are significantly higher then the potential number of `panic` calls (<57), we can assume the following simplified model: **even in large Sway programs, the overall number of _panicking calls_ will be less then thousand, and the number of `#[trace(always)]` calls will be up to five times the number of `panic` occurrences in code which we expect to be less then hundred**.
+Although these numbers are significantly higher then the potential number of `panic` calls (<57), we can assume the following simplified model: **even in large Sway programs, the overall number of _panicking calls_ will be less than thousand, and the number of `#[trace(always)]` calls will be up to five times the number of `panic` occurrences in code which we expect to be less than hundred**.
 
 ## Providing panicking calls in ABI JSON
 
