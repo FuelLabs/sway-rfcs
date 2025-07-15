@@ -126,8 +126,8 @@ To give developers full control over the backtracing, the `backtrace` build opti
 | Value | Meaning |
 | ----- | ------- |
 | all   | Backtrace all functions, even those annotated with `#[trace(never)]`. |
-| all_no_never | Backtrace all functions, except those annotated with `#[trace(never)]`. This is the default for `debug` builds. |
-| always_only | Backtrace only functions annotated with `#[trace(always)]`. This is the default for `release` builds. |
+| all_except_never | Backtrace all functions, except those annotated with `#[trace(never)]`. This is the default for `debug` builds. |
+| only_always | Backtrace only functions annotated with `#[trace(always)]`. This is the default for `release` builds. |
 | none   | Do not backtrace any functions. This results in current ABI Errors behavior, with zero additional cost. |
 
 # Reference-level explanation
