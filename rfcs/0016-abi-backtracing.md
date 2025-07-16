@@ -178,13 +178,13 @@ the following ABI JSON entry would be created:
 "panickingCalls": {
     "1": {
         "pos": {
-            "fn": "some_package::some_module::some_function",
+            "function": "some_package::some_module::some_function",
             "pkg": "some_package@0.1.0",
             "file": "src/some_module.sw",
             "line": 4,
             "column": 8
         },
-        "fn": "some_other_package::module::this_function_might_panic"
+        "function": "some_other_package::module::this_function_might_panic"
     },
 }
 ```
