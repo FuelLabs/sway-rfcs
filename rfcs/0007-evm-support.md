@@ -485,7 +485,7 @@ Hardhat has been around for longer than Foundry and is still a popular option, b
 the fastest in terms of test time and its Javscript/Typescript interface to smart contracts is
 largely unintuitive and more copmlex.
 
-Here is a [Vyper Deployer Plugin](https://github.com/NomicFoundation/hardhat/tree/main/packages/hardhat-vyper) and its [Example Usage](https://github.com/jtriley-eth/offensive_vyper)
+Here is a [Vyper Deployer Plugin](https://github.com/NomicFoundation/hardhat/tree/main/archive/hardhat-vyper) and its [Example Usage](https://github.com/jtriley-eth/offensive_vyper)
 
 ### [Ethers](https://github.com/gakonst/ethers-rs/) + [REVM](https://github.com/bluealloy/revm)
 
@@ -666,6 +666,8 @@ This language is poorly documented and unusually complex, so here is an [ERC20 e
 
 This would create a well-designed, rust-like language for the EVM ecosystem, which is currently
 non-existent. This will allow EVM engineers to design more secure smart contracts on EVM and Fuel VM
+<!-- The defillama link is valid, but the server returns HTTP 403, refusing to serve the markdown link checker. -->
+<!-- markdown-link-check-disable-next-line -->
 alike, will boost Sway's total TVL in the [Defi LLama Language TVL Listings](https://defillama.com/languages),
 and will spark interest in the language enough to bring engineers into the Fuel ecosystem with
 marginal learning overhead.
