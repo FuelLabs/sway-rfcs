@@ -1,4 +1,3 @@
-
 # RFC: Forc Tooling Monorepo Split
 - **Feature Name:** `forc_tooling_monorepo`
 - **Start Date:** 2025-10-29
@@ -77,6 +76,19 @@ Both repos maintain independent CI pipelines:
 6. **Rollout and Monitoring** — release beta builds, collect telemetry, compare CI metrics, and refine docs.
 
 ---
+## Multi-Crate Release Tooling
+The Rust ecosystem has developed significantly better tooling for multi-crate monorepos since the original Sway release process was established. Modern options include:
+
+- **release-plz** — CI-native, creates release PRs with automated changelogs and version bumps, zero config
+- **cargo-smart-release** — CLI-first, traverses dependency graphs intelligently, allows manual refinement, used by gitoxide (40+ crates)
+- **cargo-unleash** — Built for massive monorepos (Parity Substrate), selective release control with change detection
+- **Native cargo workspace publishing** — Official support landed in Cargo 1.90 (Sept 2025)
+
+These tools typically rely on conventional commits (`feat:`, `fix:`, `BREAKING:`) for automated changelog generation and version detection. Most support per-crate semantic versioning with git tags like `forc-wallet-v0.2.0`.
+
+The choice between fully automated (CI-driven PRs) versus manual (developer-initiated) workflows will depend on team preferences and the operational complexity of coordinating releases across both repositories.
+
+---
 ## Drawbacks
 - Multi-repo coordination increases overhead for cross-cutting changes.
 - Temporary CI churn during migration.
@@ -92,10 +104,13 @@ The proposed **hybrid model** preserves compiler-tooling cohesion where it matte
 ---
 ## Prior Art
 - **Rust:** separates `rustc` and `cargo` lifecycles.
-- **Tokio:** demonstrates multi-crate monorepos with per-crate semantic versioning.
+- **Tokio:** ~5 crates with independent versioning (tokio-util not locked to core tokio), monthly releases plus LTS tracks.
+- **gitoxide:** ~40 crates with complex interdependencies, uses cargo-smart-release.
+- **AWS SDK for Rust:** 300+ service crates with custom split-release automation.
 - **Fuel precedent:** `forc-wallet` already lives outside Sway successfully.
 - **Fuelup:** already installs multi-source components cohesively.
 
 ---
 ## Unresolved Questions
-How does this affect documentation? If we move tooling docs over to the new monorepo then upstream documentation tools will need to be reconfigured to pull from this new source.
+- How does this affect documentation? If we move tooling docs over to the new monorepo then upstream documentation tools will need to be reconfigured to pull from this new source.
+- Which multi-crate release workflow should we adopt? Need to evaluate trade-offs between fully automated (CI-driven PRs) versus manual (developer-initiated) approaches, factoring in team size, release frequency, and coordination overhead.
