@@ -82,7 +82,6 @@ The Rust ecosystem has developed significantly better tooling for multi-crate mo
 - **release-plz** — CI-native, creates release PRs with automated changelogs and version bumps, zero config
 - **cargo-smart-release** — CLI-first, traverses dependency graphs intelligently, allows manual refinement, used by gitoxide (40+ crates)
 - **cargo-unleash** — Built for massive monorepos (Parity Substrate), selective release control with change detection
-- **Native cargo workspace publishing** — Official support landed in Cargo 1.90 (Sept 2025)
 
 These tools typically rely on conventional commits (`feat:`, `fix:`, `BREAKING:`) for automated changelog generation and version detection. Most support per-crate semantic versioning with git tags like `forc-wallet-v0.2.0`.
 
