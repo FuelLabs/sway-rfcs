@@ -71,7 +71,7 @@ Both repos maintain independent CI pipelines:
 1. **Discovery and Alignment** — confirm scope, inventory binaries, define compatibility contract.
 2. **Bootstrap `forc-tooling`** — scaffold repo, establish CI, port coding standards, pilot with `forc-wallet`.
 3. **Migrate Operational Tooling** — move `forc-node`, `forc-client`, `forc-crypto`, and tracing crates; drop heavy deps from Sway.
-4. **Introduce Wrapper Crates** — create `forc-fmt`, `forc-lsp`, and `forc-doc` delegating to compiler crates.
+4. **Introduce Wrapper Crates** — refactor `forc-migrate` and `forc-doc` by extracting their core logic into library crates (`sway-migrate` and `sway-doc`), then retain the original crates as thin CLI wrappers that invoke the respective libraries.
 5. **Adapt Distribution Tooling** — update manifests, `fuelup`, `fuel.nix`, and nightly pipelines.
 6. **Rollout and Monitoring** — release beta builds, collect telemetry, compare CI metrics, and refine docs.
 
