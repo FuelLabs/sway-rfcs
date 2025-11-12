@@ -54,9 +54,9 @@ an enum:
 ```sway
 #[error_type]
 enum MyError {
-  #[error("error A")]
+  #[error(m = "error A")]
   A: (),
-  #[error("error B")]
+  #[error(m = "error B")]
   B: (u64, u8),
 }
 ```
@@ -231,54 +231,60 @@ this would produce, when compiled, the following ABI specification file:
   "errorCodes": {
     "18446744069414584320": {
         "pos": {
+          "pkg": "script-error",
           "file": "main.sw",
           "line": 13,
-          "col": 10
+          "column": 10
         },
         "logId": null,
         "msg": "a str panic"
     },
     "18446744069414584321": {
         "pos": {
+          "pkg": "script-error",
           "file": "main.sw",
           "line": 14,
-          "col": 10
+          "column": 10
         },
         "logId": null,
         "msg": "another str panic"
     },
     "18446744069414584322": {
         "pos": {
+          "pkg": "script-error",
           "file": "main.sw",
           "line": 15,
-          "col": 10
+          "column": 10
         },
         "logId": "4933727799282657266",
         "msg": null,
     },
     "18446744069414584323": {
         "pos": {
+          "pkg": "script-error",
           "file": "main.sw",
           "line": 16,
-          "col": 10
+          "column": 10
         },
         "logId": "4933727799282657266",
         "msg": null,
     }
     "18446744069414584324": {
         "pos": {
+          "pkg": "script-error",
           "file": "main.sw",
           "line": 17,
-          "col": 10
+          "column": 10
         },
         "logId": "4933727799282657266",
         "msg": null,
     },
     "18446744069414584325": {
         "pos": {
+          "pkg": "script-error",
           "file": "main.sw",
           "line": 18,
-          "col": 10
+          "column": 10
         },
         "logId": "4933727799282657266",
         "msg": null,
