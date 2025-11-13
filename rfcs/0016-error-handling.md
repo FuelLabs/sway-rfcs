@@ -297,6 +297,7 @@ Having preconditions checked by guard functions like `only_owner` is an establis
 1. Should we deprecate `require` an replace it with `assert(condition, error)`?
 1. Should we use simpler glob patterns instead of regular expressions in the `panic_msg` and `panic_value` arguments of the `#[test]` attribute? Regular expressions are mightier, but can be cumbersome for simpler matches, especially when matching dots.
 1. Should we still keep the `std::revert::revert(code: u64)`? The reason for the proposed deprecation is the assumption that reverting with a `u64` error code will not be needed in _applications_. By removing it, we again enforce best error handling practices by expecting end-developers to use `panic` and provide rich error messages. Is there a use case for _applications_ to have a need to revert on an error code? Like following a certain SRC?
+    - **A**: Yes, we should keep it. Removing the ability to simply return a revert code goes against Sway's philosophy of providing fine grained control. E.g., Rust has sophisticated error types, but one can still exit with an integer if desirable.
 
 # Future possibilities
 
