@@ -63,12 +63,55 @@ Both repos maintain independent CI pipelines:
 
 ### Release Pipeline
 - Tooling crates publish independently via the `forc-tooling` CI pipeline.
-- Compatibility is tracked via a shared `compatibility.toml`, mirrored across both repos.
+- Compatibility is tracked via an auto-generated `releases.toml` (see below).
 - `fuelup` reads dual manifests and installs atomic toolchains from separate channels.
 - `fuel.nix` gains new inputs to pin compiler and tooling revisions independently.
+
+### Compatibility Tracking
+With independent release cycles, we need a way to track which dependency versions each tool was built against. Rather than maintaining a manual compatibility matrix, we use an automated approach:
+
+**Source of truth for development:** `Cargo.toml` workspace dependencies define what versions tools build against during development.
+
+**Source of truth for releases:** CI auto-generates a `releases.toml` file when a release is published. This file records the exact versions of `sway`, `fuel-core`, and `fuels-rs` resolved from `Cargo.lock` at release time.
+
+Example `releases.toml` format:
+```toml
+# Auto-generated at release time. Do not edit manually.
+
+[[releases]]
+crate = "forc-wallet"
+version = "0.12.0"
+date = "2025-01-15"
+sway = "0.67.0"
+fuel-core = "0.47.1"
+fuels-rs = "0.69.0"
+
+[[releases]]
+crate = "forc-fmt"
+version = "0.1.0"
+date = "2025-01-20"
+sway = "0.67.0"
+
+[[releases]]
+crate = "forc-crypto"
+version = "0.1.0"
+date = "2025-01-20"
+# Standalone tool - no sway/fuel-core dependencies
+```
+
+The release CI workflow extracts version information and appends an entry to `releases.toml`, which is then committed back to the repository.
+
+| Concern | Solution |
+| ------- | -------- |
+| What do I build against now? | Look at `Cargo.toml` |
+| What was release X built with? | Look at `releases.toml` |
+| Manual maintenance? | Zero — CI generates it |
+| fuel.nix/fuelup consumption? | Simple TOML to parse |
+| Historical record? | Yes, append-only log |
+
 ---
 ## Implementation Plan
-1. **Discovery and Alignment** — confirm scope, inventory binaries, define compatibility contract.
+1. **Discovery and Alignment** — confirm scope and inventory binaries.
 2. **Bootstrap `forc-tooling`** — scaffold repo, establish CI, port coding standards, pilot with `forc-wallet`.
 3. **Migrate Operational Tooling** — move `forc-node`, `forc-client`, `forc-crypto`, and tracing crates; drop heavy deps from Sway.
 4. **Introduce Wrapper Crates** — refactor `forc-migrate` and `forc-doc` by extracting their core logic into library crates (`sway-migrate` and `sway-doc`), then retain the original crates as thin CLI wrappers that invoke the respective libraries.
