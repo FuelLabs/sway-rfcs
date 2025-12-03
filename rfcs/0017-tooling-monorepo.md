@@ -1,0 +1,166 @@
+# RFC: Forc Tooling Monorepo Split
+- **Feature Name:** `forc_tooling_monorepo`
+- **Start Date:** 2025-10-29
+- **RFC PR:** [FuelLabs/sway-rfcs#0017](https://github.com/FuelLabs/sway-rfcs/pull/0017)
+
+---
+## Summary
+The Sway repository currently hosts the compiler, language-aware tooling, and all client-facing `forc` binaries under a single workspace and synchronized release cycle. This RFC proposes establishing a dedicated **`forc-tooling` monorepo** for client and infrastructure tooling, while keeping compiler-adjacent binaries (`swayfmt`, `sway-lsp`, and the forthcoming `sway-doc`) within the Sway repository.
+
+The new repository would:
+- Ship wrapper binaries (`forc-fmt`, `forc-lsp`, `forc-doc`, `forc-migrate`) and operational tooling such as `forc-node`, `forc-client`, `forc-crypto`, and `forc-wallet`
+- Allow **independent release cadences** and changelogs for each crate
+- Eliminate heavy dependencies (e.g. `fuel-core`) from compiler builds
+- Maintain a unified developer experience through `forc`, `fuelup`, `fuel.nix`, and nightly distributions.
+
+---
+## Motivation
+Today, compiler and tooling teams share a single monorepo. Every workspace member must publish in lockstep, and compiler CI is burdened by dependencies from operational tooling (notably `fuel-core` via `forc-node`). This coupling inflates build times and increases breakage risk.
+
+A split enables:
+- Faster, independent iteration on operational binaries such as `forc-node`, `forc-client`, and `forc-wallet`
+- A leaner compiler pipeline, isolated from infrastructure dependencies
+- Continued tight coupling where it’s valuable (e.g. AST-aware utilities like `swayfmt` and `sway-lsp`)
+
+This design balances **agility for the tooling team** and **stability for compiler developers**, while preserving a cohesive ecosystem for end users.
+
+## Current Architecture
+| Repository    | Category     | Components                                                                                                                                         |
+| ------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sway`        | Binaries     | `forc`, `forc-pkg`, `forc-tracing`, `forc-test`, `forc-util`                                                                                       |
+| `sway`        | Plugins      | `forc-client`, `forc-crypto`, `forc-debug`, `forc-doc`, `forc-fmt`, `forc-lsp`, `forc-mcp`, `forc-migrate`, `forc-node`, `forc-publish`, `forc-tx` |
+| `sway`        | Applications | `swayfmt`, `sway-lsp`                                                                                                                              |
+| `forc-wallet` | Binary       | `forc-wallet`                                                                                                                                      |
+
+`forc-fmt` and `forc-lsp` are thin wrappers; the real implementations live in `swayfmt` and `sway-lsp`, which directly depend on compiler ASTs. Keeping those AST-aware binaries inside Sway ensures compiler changes are validated in CI and remain in lockstep.
+
+Under the proposed architecture:
+- Wrapper binaries like `forc-fmt`, `forc-lsp`, and `forc-doc`, `forc-migrate` move to the **tooling monorepo**, delegating functionality to compiler crates.
+- New internal crates such as `sway-doc` or `sway-migrate` can follow this same pattern: core implementation in Sway, lightweight CLI in the tooling repo.
+- `forc-wallet` joins the new monorepo, allowing the existing standalone repository to be retired.
+
+### Distribution
+Currently, `sway-nightly-binaries` publishes `forc`, `fuel-core`, and `forc-wallet`. Post-split, it will source `forc-wallet` and other operational tooling artefacts from the new monorepo. Both `fuel.nix` and `fuelup` will update paths to reference the correct origins while preserving atomic toolchain installs.
+
+---
+## Guide-Level Explanation
+From a user’s perspective, nothing changes — `forc` still provides the same subcommands.  
+Internally, however:
+- `forc-fmt`, `forc-lsp`, `forc-migrate` and `forc-doc` delegate to compiler-maintained crates (`swayfmt`, `sway-lsp`, `sway-migrate`, `sway-doc`).
+- Operational tools (`forc-node`, `forc-client`, `forc-crypto`, `forc-wallet`) are built and released from the new **`forc-tooling`** repo.
+- Each crate has its own changelog and versioning cadence.
+- `fuelup` and `fuel.nix` handle dual sources transparently.
+
+### Repository Boundaries
+| Repository       | Responsibility                                  | Notes                                                                                                                            |
+| ---------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Sway**         | Compiler, language services, AST-aware binaries | Publishes `swayfmt`, `sway-lsp`, `sway-doc`, `sway-migrate` , and related libraries consumed by tooling wrappers                 |
+| **Forc-tooling** | CLI wrappers and operational tools              | Hosts `forc-fmt`, `forc-lsp`, `forc-doc`, `forc-node`, `forc-client`, `forc-crypto`, `forc-wallet`, and tracing/deploy utilities |
+
+Both repos maintain independent CI pipelines:
+- **Sway CI:** Compiler validation and language tooling regression tests
+- **Tooling CI:** End-to-end integration and compiler compatibility checks
+
+### Release Pipeline
+- Tooling crates publish independently via the `forc-tooling` CI pipeline.
+- Compatibility is tracked via an auto-generated `releases.toml` (see below).
+- `fuelup` reads dual manifests and installs atomic toolchains from separate channels.
+- `fuel.nix` gains new inputs to pin compiler and tooling revisions independently.
+
+### Compatibility Tracking
+With independent release cycles, we need a way to track which dependency versions each tool was built against. Rather than maintaining a manual compatibility matrix, we use an automated approach:
+
+**Source of truth for development:** Each workspace member's own `Cargo.toml` defines its dependency versions. This allows different tools to use different versions of `sway`, `fuel-core`, or `fuels-rs` as needed, and supports per-crate patching during development.
+
+**Source of truth for releases:** CI auto-generates a `releases.toml` file when a release is published. The workflow inspects the specific workspace member being released and extracts the resolved versions of its dependencies from `Cargo.lock`.
+
+Example `releases.toml` format:
+```toml
+# Auto-generated at release time. Do not edit manually.
+
+[[releases]]
+crate = "forc-wallet"
+version = "0.12.0"
+date = "2025-01-15"
+sway = "0.67.0"
+fuel-core = "0.47.1" # May differ from other tools
+fuels-rs = "0.69.0"
+
+[[releases]]
+crate = "forc-fmt"
+version = "0.1.0"
+date = "2025-01-20"
+sway = "0.68.0"  
+
+[[releases]]
+crate = "forc-crypto"
+version = "0.1.0"
+date = "2025-01-20"
+fuel-core = "0.45.0"
+# Standalone tool - no sway/fuel-core dependencies
+
+[[releases]]
+crate = "forc-tracing"
+version = "0.17.3"
+date = "2025-01-20"
+# Standalone tool - no sway/fuel-core/fuels-rs dependencies
+```
+
+The release CI workflow extracts the crate name from the release tag, resolves that crate's dependency versions from `Cargo.lock`, and appends an entry to `releases.toml`. This is then committed back to the repository.
+
+| Concern | Solution |
+| ------- | -------- |
+| What do I build against now? | Look at the workspace member's `Cargo.toml` |
+| What was release X built with? | Look at `releases.toml` |
+| Manual maintenance? | Zero — CI generates it |
+| fuel.nix/fuelup consumption? | Simple TOML to parse |
+| Historical record? | Yes, append-only log |
+| Per-tool version overrides? | Supported — each crate manages its own deps |
+
+---
+## Implementation Plan
+1. **Discovery and Alignment** — confirm scope and inventory binaries.
+2. **Bootstrap `forc-tooling`** — scaffold repo, establish CI, port coding standards, pilot with `forc-wallet`.
+3. **Migrate Operational Tooling** — move `forc-node`, `forc-client`, `forc-crypto`, and tracing crates; drop heavy deps from Sway.
+4. **Introduce Wrapper Crates** — refactor `forc-migrate` and `forc-doc` by extracting their core logic into library crates (`sway-migrate` and `sway-doc`), then retain the original crates as thin CLI wrappers that invoke the respective libraries.
+5. **Adapt Distribution Tooling** — update manifests, `fuelup`, `fuel.nix`, and nightly pipelines.
+6. **Rollout and Monitoring** — release beta builds, collect telemetry, compare CI metrics, and refine docs.
+
+---
+## Multi-Crate Release Tooling
+The Rust ecosystem has developed significantly better tooling for multi-crate monorepos since the original Sway release process was established. Modern options include:
+
+- **release-plz** — CI-native, creates release PRs with automated changelogs and version bumps, zero config
+- **cargo-smart-release** — CLI-first, traverses dependency graphs intelligently, allows manual refinement, used by gitoxide (40+ crates)
+- **cargo-unleash** — Built for massive monorepos (Parity Substrate), selective release control with change detection
+
+These tools typically rely on conventional commits (`feat:`, `fix:`, `BREAKING:`) for automated changelog generation and version detection. Most support per-crate semantic versioning with git tags like `forc-wallet-v0.2.0`.
+
+The choice between fully automated (CI-driven PRs) versus manual (developer-initiated) workflows will depend on team preferences and the operational complexity of coordinating releases across both repositories.
+
+---
+## Drawbacks
+- Multi-repo coordination increases overhead for cross-cutting changes.
+- Temporary CI churn during migration.
+
+---
+## Rationale and Alternatives
+- **Status quo:** Simpler, but slow CI, forced lockstep releases, and coupling between compiler and operational tooling.
+- **Partial extraction:** Moving only heavy dependencies (e.g. `forc-node`) reduces build load but leaves version coupling.
+- **Full split:** Moving everything out of Sway (including AST-aware crates) breaks compiler CI feedback and risks incompatibility.
+
+The proposed **hybrid model** preserves compiler-tooling cohesion where it matters and autonomy where it doesn’t.
+
+---
+## Prior Art
+- **Rust:** separates `rustc` and `cargo` lifecycles.
+- **Tokio:** ~5 crates with independent versioning (tokio-util not locked to core tokio), monthly releases plus LTS tracks.
+- **gitoxide:** ~40 crates with complex interdependencies, uses cargo-smart-release.
+- **AWS SDK for Rust:** 300+ service crates with custom split-release automation.
+- **Fuel precedent:** `forc-wallet` already lives outside Sway successfully.
+- **Fuelup:** already installs multi-source components cohesively.
+
+---
+## Unresolved Questions
+- How does this affect documentation? If we move tooling docs over to the new monorepo then upstream documentation tools will need to be reconfigured to pull from this new source.
+- Which multi-crate release workflow should we adopt? Need to evaluate trade-offs between fully automated (CI-driven PRs) versus manual (developer-initiated) approaches, factoring in team size, release frequency, and coordination overhead.
