@@ -70,9 +70,9 @@ Both repos maintain independent CI pipelines:
 ### Compatibility Tracking
 With independent release cycles, we need a way to track which dependency versions each tool was built against. Rather than maintaining a manual compatibility matrix, we use an automated approach:
 
-**Source of truth for development:** `Cargo.toml` workspace dependencies define what versions tools build against during development.
+**Source of truth for development:** Each workspace member's own `Cargo.toml` defines its dependency versions. This allows different tools to use different versions of `sway`, `fuel-core`, or `fuels-rs` as needed, and supports per-crate patching during development.
 
-**Source of truth for releases:** CI auto-generates a `releases.toml` file when a release is published. This file records the exact versions of `sway`, `fuel-core`, and `fuels-rs` resolved from `Cargo.lock` at release time.
+**Source of truth for releases:** CI auto-generates a `releases.toml` file when a release is published. The workflow inspects the specific workspace member being released and extracts the resolved versions of its dependencies from `Cargo.lock`.
 
 Example `releases.toml` format:
 ```toml
@@ -83,31 +83,39 @@ crate = "forc-wallet"
 version = "0.12.0"
 date = "2025-01-15"
 sway = "0.67.0"
-fuel-core = "0.47.1"
+fuel-core = "0.47.1" # May differ from other tools
 fuels-rs = "0.69.0"
 
 [[releases]]
 crate = "forc-fmt"
 version = "0.1.0"
 date = "2025-01-20"
-sway = "0.67.0"
+sway = "0.68.0"  
 
 [[releases]]
 crate = "forc-crypto"
 version = "0.1.0"
 date = "2025-01-20"
+fuel-core = "0.45.0"
 # Standalone tool - no sway/fuel-core dependencies
+
+[[releases]]
+crate = "forc-tracing"
+version = "0.17.3"
+date = "2025-01-20"
+# Standalone tool - no sway/fuel-core/fuels-rs dependencies
 ```
 
-The release CI workflow extracts version information and appends an entry to `releases.toml`, which is then committed back to the repository.
+The release CI workflow extracts the crate name from the release tag, resolves that crate's dependency versions from `Cargo.lock`, and appends an entry to `releases.toml`. This is then committed back to the repository.
 
 | Concern | Solution |
 | ------- | -------- |
-| What do I build against now? | Look at `Cargo.toml` |
+| What do I build against now? | Look at the workspace member's `Cargo.toml` |
 | What was release X built with? | Look at `releases.toml` |
 | Manual maintenance? | Zero — CI generates it |
 | fuel.nix/fuelup consumption? | Simple TOML to parse |
 | Historical record? | Yes, append-only log |
+| Per-tool version overrides? | Supported — each crate manages its own deps |
 
 ---
 ## Implementation Plan
