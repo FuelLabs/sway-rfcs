@@ -253,7 +253,7 @@ Sway wants to support 'out of order' declarations and dependencies and recursive
 
 I propose two new passes, a "node collection" pass, which constructs a graph of the untyped program relative to any one node. The information collected from this stage is used provide a "look ahead" ability for the "type collection" pass.
 
-And a "type collection" pass, which performs type checking on the "high-level" information for declarations. "High-level" information would include type checking a function signature (but not a function body), type checking a struct definition and the function signatures of its methods (but not the method bodies). Rust does this same step actually: https://rustc-dev-guide.rust-lang.org/type-checking.html#type-collection
+And a "type collection" pass, which performs type checking on the "high-level" information for declarations. "High-level" information would include type checking a function signature (but not a function body), type checking a struct definition and the function signatures of its methods (but not the method bodies). Rust does this same step actually.
 
 Once these are added, the compile would roughly look like:
 
