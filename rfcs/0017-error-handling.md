@@ -7,7 +7,7 @@
 
 [summary]: #summary
 
-This RFC defines guidelines on error handling for developers of reusable Sway libraries and applications. It aims for achieving consistent and predictable behavior in case of errors across the ecosystem. Implementing it will guarantee a smooth error troubleshooting experience, at zero-cost, unless opted-in for an acceptable on-chain cost.
+This RFC defines guidelines on error handling for developers of reusable Sway libraries and applications. It aims for achieving consistent and predictable error behavior across the ecosystem. Implementing it will guarantee a smooth error troubleshooting experience, at zero-cost, unless opted-in for an acceptable on-chain cost.
 
 The proposed approach strives to strike a balance between: 
 - code readability and convenience (e.g., using guard functions for testing preconditions instead of in-place `if !<precondition> { panic ... }`),
@@ -18,16 +18,16 @@ The proposed approach strives to strike a balance between:
 
 [motivation]: #motivation
 
-[ABI errors](0014-abi-errors.md) and [ABI backtracing](0016-abi-backtracing.md) bring improved debugging and troubleshooting experience at possible zero-cost, or negligible cost, respectively. **But those improvements and zero/negligible cost can be achieved only if the features are adequately and consistently used across libraries and applications.**
+[ABI errors](0014-abi-errors.md), [ABI backtracing](0016-abi-backtracing.md), and [`log_panic_values` attribute and build option](https://github.com/FuelLabs/sway/issues/7500) bring improved debugging and troubleshooting experience at possible zero or negligible cost. **But those improvements and zero/negligible cost can be achieved only if those language features are adequately and consistently used across libraries and applications.**
 
 Currently, we have a consistent approach to recoverable errors, through the usage of the `std::result::Result` type. Irrecoverable errors, on the contrary, are handled inconsistently, combining several approaches:
 - using `__revert`, often with `0` as argument,
-- using various `std::revert::*` functions,
+- using various `std::revert::*` functions, also often with `0` as revert code,
 - using `std::assert::*` functions, mostly in tests, **but also in non-test code, e.g. in the `std` implementation, examples, etc.**.
 
 On top of these existing approaches, ABI errors bring the `panic` expression, potentially increasing the level of inconsistency. Moreover, the benefits of the `panic` expressions can be fully achieved only if it is used in alignment with best practices detailed in this RFC.
 
-This RFC aims for a clear guideline on how to properly utilize ABI errors and backtracing, `panic` expression and `#[trace]` attribute in particular.
+This RFC aims for a clear guideline on how to properly utilize ABI errors, backtracing, `panic` expression, `#[trace]` attribute, and `log_panic_values` in particular.
 
 # Guide-level explanation
 
@@ -35,11 +35,11 @@ This RFC aims for a clear guideline on how to properly utilize ABI errors and ba
 
 Throughout this RFC, we use the following terms:
 - _end-developer_ for application developers, who write they own code over which they have full control, and reuse Sway libraries, over whose implementation and behavior they have no control.
-- _reusable library_ for any dependency, that the end-developer has no control over, i.e., cannot opt in or out of a certain behavior of individual functions/methods. This includes `std`, libraries provided by Fuel, like, e.g., `sway_libs`, or any third-party libraries.
+- _reusable library_ for any dependency, that the end-developer has no control over, i.e., cannot opt in or out of a certain behavior of individual functions/methods unless that foreseen by the library developer. This includes `std`, libraries provided by Fuel, like, e.g., `sway_libs`, or any third-party libraries.
 - _application_ for any end-developer's code, that the end-developer has a full control of. This will usually mean contracts, scripts, or predicates, but can also mean application specific local libraries.
 - _guard function_ for any function that checks preconditions or invariants in general and reverts if those are not satisfied. Typical examples in the `std` are `assert[_eq/_ne]` and `require`, and in `sway_libs` `ownership::only_owner`.
 
-When it comes to error handling, end-developers cannot influence implementation and behavior of _reusable libraries_ that they use as dependencies. That's why we expect _reusable libraries_ to follow strict guidelines, to fullfil the expectations listed in the below chapter.
+When it comes to error handling, _end-developers_ cannot influence implementation and behavior of _reusable libraries_ that they use as dependencies. That's why we expect _reusable libraries_ to follow guidelines that allow _end-developers_ to always be able to opt-in or out of error handling related cost.
 
 ## Error handling in reusable libraries
 
@@ -47,14 +47,14 @@ When it comes to error handling, end-developers cannot influence implementation 
 
 When using _reusable libraries_ the end-developers will expect the following:
 1. In case of irrecoverable errors, either the error location or the backtrace available in the standard `release` build will always point to the library code that has caused the issue.
-1. In case of irrecoverable errors, there will be no on-chain cost for ABI error handling by default, unless the developer opts-in for a cost via dedicated API.
+1. In case of irrecoverable errors, there will be no on-chain cost for ABI error handling by default, unless the developer opts-in for a cost via dedicated API or `log_panic_values`.
 1. Error type enums will always have the prefix `Error`. E.g., `AccessError`.
 1. Error messages will be helpful and follow a consistent pattern and wording.
 
 The above expectations imply the following rules for implementing _reusable libraries_:
 1. _Guard functions_ will be annotated as `#[trace(always)]`.
 1. _Reusable libraries_ will ideally use the `panic` expression directly, ensuring the error location to be in the library code. They can also use _guard functions_ assuming those always conform to the first point and are annotated with `#[trace(always)]`.
-1. _Reusable libraries_ will exclusively use strings for formulating error messages _in the default API_. Using enums would result in increase of bytecode size that cannot be opted in or out by end-developers. (For the explanation of the overhead see [Reduce the cost of encoding](#reduce-the-cost-of-encoding).) Providing additional information via non-unit enum variants might be useful in certain cases. For such cases, a dedicated opt-in API should be provided. An example would be `Result::unwrap` and `Result::expect` methods. The former, considered the default, will `panic` with zero-cost and useful common error message, while the latter will provide rich information, but with an on-chain overhead. Important is that _end developers_ can opt-in and accept that cost and not get them by default.
+1. _Reusable libraries_ will use either strings or error enum variants known at compile time for formulating error messages. Using error enum variants that log values for rich error information in `debug` mode is highly encouraged, but only in the combination with the [`#[log_panic_values(never_if_only_non_unit)]` attribute](https://github.com/FuelLabs/sway/issues/7500). The general guideline is that an _end-developer_ must always be able to fully opt-in or out of the logging cost by using the `log_panic_values` build option or attribute. (For the explanation of the overhead see [Reduce the cost of encoding](#reduce-the-cost-of-encoding).)
 
 For helpful and consistent error messages, the proposal is to consistently use full sentences that answer the question "What has happened, and, ideally, why?". E.g.:
 - "Adding `u8`s (+) has overflowed." Not: "u8 add overflow".
@@ -74,7 +74,7 @@ In applications, end-developers can choose between the performance and the conve
 require(<some check>, "Some check must pass.");
 ```
 
-will result in the error message being stored on-chain, contributing to the bytecode size. The error argument will in addition be encoded, which also contributes to the bytecode size. (For the explanation of the encoding overhead see [Reduce the cost of encoding](#reduce-the-cost-of-encoding).)
+will result in the error message being stored on-chain, contributing to the bytecode size, unless _end-developers_ use the `log_panic_values = never` option. The error argument will in addition be encoded, which also contributes to the bytecode size. (For the explanation of the encoding overhead see [Reduce the cost of encoding](#reduce-the-cost-of-encoding).)
 
 On the contrary, the more verbose:
 
@@ -85,6 +85,8 @@ if !<some check> {
 ```
 
 will result in the error message not being stored on-chain.
+
+For controlling the logging cost from the _end-developer_ side, see [Opt-in `panic` logging cost with `log_panic_values` build option and attribute](https://github.com/FuelLabs/sway/issues/7500).
 
 ## Error handling in Sway tests and SDKs
 
@@ -135,6 +137,10 @@ Similarly, the SDKs will recognize reverts coming from `panic`king and display t
 
 [reference-level-explanation]: #reference-level-explanation
 
+## Implement `log_panic_values` build option and attribute
+
+As defined in [Opt-in `panic` logging cost with `log_panic_values` build option and attribute](https://github.com/FuelLabs/sway/issues/7500).
+
 ## Adapt compilation of `panic` to avoid structural changes in the `std`
 
 Currently, the implementation of `panic` wraps the argument into an `encode` call to be able to log it. This makes it impossible to use `panic` even with constant string slice arguments in `std` modules like `ops`, because of circular dependencies with the `codec` module. Rather then restructuring the standard library, we will change the compiler to recognize constant string slices as a special case and do not `encode` them, which will remove the need for `encode`ing and thus the circular dependency.
@@ -152,6 +158,16 @@ The majority of the work will go into adapting the `std` and other libraries to 
 All the existing enums used for error reporting, like, e.g. `standards::src5::AccessError` will be annotated as `#[error_type]`s.
 
 As an example of a typical adaptation of a _reusable library_, let's consider the `sway_libs::ownership` module. The `only_owner` as an entry guard in every `ownership`'s function will be annotated with `#[trace(always)]`, allowing the backtrace to point to the call site, means the exact function or contract method in which the ownership test has failed.
+
+Another typical example are places in the `std` that currently use `revert` like, e.g., implementation of operators in `std:ops::*` that check for overflows. Here we can utilize the `#[log_panic_values(never_if_only_non_unit)]` attribute as explain in the example given in the https://github.com/FuelLabs/sway/issues/7500:
+
+E.g., in the case of overflow, the `<u8 as Add>::add` could emit the actual numbers being added together with the message in the `debug` build:
+
+```
+panic U8OpsError::Overflow((a, b));
+```
+
+In the release build the above line will always compile to just a single `rvrt`.
 
 ## Consolidate `std::assert` and `std::revert` modules
 
@@ -202,8 +218,9 @@ The condition in `assert` was false.
 ```
 
 Note that in this case we panic on error type enums and not on hardcoded string slices, thus introducing overhead. This is not in the collision with the second point in the guidelines (zero-cost), because:
-- end-developers can always choose to use `if + panic` directly instead of an `assert`.
-- we assume `assert_eq` and `assert_ne` to be used in tests and not on-chain.
+- end-developers can always choose to use `if + panic` directly instead of an `assert`,
+- we assume `assert_eq` and `assert_ne` to be used in tests and not on-chain,
+- _end-developers_ can always opt-out of any logging cost by using `log_panic_values = never`.
 
 ### `require`
 
@@ -259,14 +276,12 @@ The proposed approach strives to strike a balance between:
 
 The proposed approach empowers _end-developers_ to always be able to choose between the three, whereas the _reusable libraries_ guarantee zero-cost errors by default.
 
-This comes at cost of putting more effort in writing _reusable libraries_. E.g, providing opt-in API with richer error messages, etc.
+Before introducing `log_panic_values` to allow developers to fully control the logging cost, these alternatives were considered:
 
-Alternative was consider, where _reusable libraries_ by default provide rich information. This goes against Sway's philosophy of not paying upfront for what one potentially does not need.
-
-Providing a "detailed panicking" version of a _reusable library_ that could be turned on in a compilation profile, was also considered. E.g., `<u8 as Add>::add` might provide exact values that have caused an overflow when compiled with such flag or in tests:
+- Having _reusable libraries_ providing by default rich information. This goes against Sway's philosophy of not paying upfront for what one potentially does not need.
+- Providing a "detailed panicking" version of a _reusable library_ that could be turned on in a compilation profile, was also considered. E.g., `<u8 as Add>::add` might provide exact values that have caused an overflow when compiled with such flag or in tests:
 
 ```sway
-...
 if panic_on_overflow_enabled() {
     #[cfg(any(detailed_panic = true, test = true))]
     panic OpsError::Overflow(self, other);
@@ -276,10 +291,7 @@ if panic_on_overflow_enabled() {
 } else {
     ...
 }
-...
 ```
-
-The benefits of such optional "detailed panicking" is hard to estimate at the moment, compared to additional feature complexity and additional development effort.
 
 # Prior art
 
@@ -326,10 +338,6 @@ To provide additional, detailed help or to link to external documentation, both 
 #[error(m = "Error message.", help = "Detailed explanation.", url = "https:://url.to.external/help/123")]
 ```
 
-## Detailed panicking compilation profile
-
-As explained in [Rationale and alternatives](#rationale-and-alternatives).
-
 ## Supporting `str` constants
 
 Currently, Sway doesn't support `str` constants:
@@ -341,25 +349,6 @@ const C: str = "";
 ```
 
 In the context of error handling, supporting `str` constants would allow reuse error messages without hardcoding them in several `panic` occurrences.
-
-Also, if zero-cost is required, instead of enum type errors whose all variants are units and do not carry any additional useful information, `str` constants conveniently grouped by common prefix could be used. E.g., instead of:
-
-```sway
-#[error_type]
-pub enum SomeError {
-    #[error(m = "First error has happened.")]
-    First: (),
-    #[error(m = "Second error has happened.")]
-    Second: (),
-}
-```
-
-developers can rather opt for zero-cost, `const` based version:
-
-```sway
-const SOME_ERROR_FIRST: str = "First error has happened.";
-const SOME_ERROR_SECOND: str = "Second error has happened.";
-```
 
 ## Introducing question mark operator `?`
 
