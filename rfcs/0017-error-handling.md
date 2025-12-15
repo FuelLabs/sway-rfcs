@@ -48,7 +48,7 @@ When it comes to error handling, _end-developers_ cannot influence implementatio
 When using _reusable libraries_ the end-developers will expect the following:
 1. In case of irrecoverable errors, either the error location or the backtrace available in the standard `release` build will always point to the library code that has caused the issue.
 1. In case of irrecoverable errors, there will be no on-chain cost for ABI error handling by default, unless the developer opts-in for a cost via dedicated API or `log_panic_values`.
-1. Error type enums will always have the prefix `Error`. E.g., `AccessError`.
+1. Error type enums will always have the suffix `Error`. E.g., `AccessError`.
 1. Error messages will be helpful and follow a consistent pattern and wording.
 
 The above expectations imply the following rules for implementing _reusable libraries_:
