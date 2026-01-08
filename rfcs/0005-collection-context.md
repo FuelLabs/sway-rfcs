@@ -468,8 +468,8 @@ does not get accepted in this form.
 [prior-art]: #prior-art
 
 Rust separates the ideas of
-[type collection](https://rustc-dev-guide.rust-lang.org/type-checking.html#type-collection),
-[type checking](https://rustc-dev-guide.rust-lang.org/type-checking.html#type-checking),
+_type collection_,
+_type checking_,
 and [type inference](https://rustc-dev-guide.rust-lang.org/type-inference.html). And these are
 all [disentangled from 'AST lowering'](https://rustc-dev-guide.rust-lang.org/overview.html#hir-lowering).
 
