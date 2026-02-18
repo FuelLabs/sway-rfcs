@@ -17,7 +17,7 @@ This PR introduces a concept of an _aligned stored value_. _Aligned stored value
 
 This PR proposes explicit API for accessing _aligned stored values_: `read_aligned`, and `write_aligned` functions, and `AlignedStorageKey` struct. Those take advantage of the above fact **and remove the need for reads before writes**. 
 
-The PR also proposes the optimal way of integrating the [dynamic storage instructions](https://github.com/FuelLabs/fuel-specs/pull/640), respecting the **low cost of dynamic rights** and **high base cost of dynamic reads**.
+The PR also proposes the optimal way of integrating the [dynamic storage opcodes](https://github.com/FuelLabs/fuel-specs/pull/640), respecting the **low cost of dynamic rights** and **high base cost of dynamic reads**.
 
 # Motivation
 
