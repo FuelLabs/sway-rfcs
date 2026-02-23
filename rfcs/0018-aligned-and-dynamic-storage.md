@@ -17,7 +17,7 @@ This PR introduces a concept of an _aligned stored value_. _Aligned stored value
 
 This PR proposes explicit API for accessing _aligned stored values_: `read_aligned`, and `write_aligned` functions, and `AlignedStorageKey` struct. Those take advantage of the above fact **and remove the need for reads before writes**. 
 
-The PR also proposes the optimal way of integrating the [dynamic storage opcodes](https://github.com/FuelLabs/fuel-specs/pull/640), respecting the **low cost of dynamic rights** and **high base cost of dynamic reads**.
+The PR also proposes the optimal way of integrating the [dynamic storage opcodes](https://github.com/FuelLabs/fuel-specs/pull/640), respecting the **low cost of dynamic writes** and **high base cost of dynamic reads**.
 
 # Motivation
 
@@ -29,7 +29,7 @@ The typical sizes of stored types are given in [Typical sizes of stored types](#
 
 [Dynamic storage](https://github.com/FuelLabs/fuel-specs/issues/517) brings [additional storage opcodes](https://github.com/FuelLabs/fuel-specs/pull/640) that can be used to lower storage access cost. However, because of the high base read cost, we need to combine them with the existing opcodes to gain the maximum benefits. As the typical sizes of types show, large values on which dynamic storage becomes directly useful are rare.
 
-`StorageMap` values and `storage` fields **never share slots with other values**. Also, they **always start at the beginning of a slot**. We say that those values are _aligned to slot boundaries_. Out of standard storage types, only `StorageVec` packs different values to a same slot and can position values at an arbitrary index within a slot.
+`StorageMap` values and `storage` fields **never share slots with other values**. Also, they **always start at the beginning of a slot**. We say that those values are _aligned to slot boundaries_. Out of standard storage types, only `StorageVec` packs different values to the same slot and can position values at an arbitrary index within a slot.
 
 If we utilize the fact that most of the values written to storage are _aligned stored values_ and support that on the API/type level, **we can remove unnecessary reads before writes, which are currently the major cause of high write costs**.
 
