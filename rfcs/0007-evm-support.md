@@ -483,9 +483,9 @@ Using Hardhat can be done by implementing a simple deployer plugin using Typescr
 
 Hardhat has been around for longer than Foundry and is still a popular option, but is nowhere near
 the fastest in terms of test time and its Javscript/Typescript interface to smart contracts is
-largely unintuitive and more copmlex.
+largely unintuitive and more complex.
 
-Here is a [Vyper Deployer Plugin](https://github.com/NomicFoundation/hardhat/tree/main/archive/hardhat-vyper) and its [Example Usage](https://github.com/jtriley-eth/offensive_vyper)
+There is a Vyper Deployer Plugin and here is its [Example Usage](https://github.com/jtriley-eth/offensive_vyper).
 
 ### [Ethers](https://github.com/gakonst/ethers-rs/) + [REVM](https://github.com/bluealloy/revm)
 
