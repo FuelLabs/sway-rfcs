@@ -17,3 +17,6 @@
 | [0013](rfcs/0013-changes-lifecycle.md)       | Changes Lifecycle       |
 | [0014](rfcs/0014-abi-errors.md)              | Abi Errors              |
 | [0015](rfcs/0015-const-generics.md)          | Const Generics          |
+| [0016](rfcs/0016-abi-backtracing.md)         | ABI Backtracing         |
+| [0017](rfcs/0017-error-handling.md)          | Error Handling          |
+| [0018](rfcs/0018-semantic-defs.md)           | SemanticDefinitions     |
